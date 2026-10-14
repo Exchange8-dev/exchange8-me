@@ -1,0 +1,8 @@
+{
+  "vertical": "exchange8",
+  "services": [
+    {
+      "service_type": "exchange8:me"
+    }
+  ]
+}
