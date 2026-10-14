@@ -502,7 +502,7 @@ mod tests {
         assert!(ShardJournal::decode_chunk(&[1, 2]).is_empty());
         // Truncated entry body.
         let mut chunk = vec![1, 0, 0, 0, 99, 0, 0, 0]; // claims 99-byte entry, none present
-        chunk.extend_from_slice(&[b'a']);
+        chunk.extend_from_slice(b"a");
         assert!(ShardJournal::decode_chunk(&chunk).is_empty());
     }
 

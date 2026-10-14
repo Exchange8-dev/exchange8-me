@@ -490,7 +490,7 @@ pub async fn commit_uncross(
     let ev = sentin8::audit::AuditEvent::builder()
         .service("exchange8:me")
         .action(sentin8::audit::AuditAction::Execute)
-        .resource("auction", &session.auction_id.to_string())
+        .resource("auction", session.auction_id.to_string())
         .actor("exchange8:me", "machine")
         .tenant(Uuid::nil(), session.env_id)
         .severity(sentin8::audit::AuditSeverity::Info)

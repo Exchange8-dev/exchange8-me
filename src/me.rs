@@ -37,7 +37,7 @@ use serde::Serialize;
 use sqlx::Acquire;
 use uuid::Uuid;
 
-use exchange8::contracts::events::{AddOrder, CancelOrder, ModifyOrder, MarketStatusMsg};
+use exchange8::contracts::events::{AddOrder, CancelOrder, MarketStatusMsg, ModifyOrder};
 
 use sentin8::shell::err_db;
 
@@ -126,9 +126,7 @@ pub fn instrument_id_of(security_id: &str) -> u32 {
 /// env) so the events and the MemBus publishes share one tenant identity
 /// (`sentin8::membus::ServiceBus::resolve_env_id` semantics).
 pub fn resolve_env_id(service_name: &str) -> Uuid {
-    let slug = service_name
-        .to_ascii_uppercase()
-        .replace([':', '-'], "_");
+    let slug = service_name.to_ascii_uppercase().replace([':', '-'], "_");
     let raw = std::env::var(format!("{slug}_ENV_ID"))
         .or_else(|_| std::env::var("SENTIN8_ENV_ID"))
         .unwrap_or_else(|_| sentin8::config::SYSTEM_ENV_ID.to_string());
@@ -151,9 +149,9 @@ pub async fn spawn_shard_plane(state: Arc<AppState>, env_id: Uuid) -> SharedRegi
         let reg = registry.clone();
         let pool = state.core.pool.clone();
         let handle = tokio::spawn(async move { load_registry(&pool, env_id).await });
-        let loaded = handle
-            .await
-            .unwrap_or_else(|_| RegistryHandle::from_sod(InstrumentRegistry::from_rows(Vec::new())));
+        let loaded = handle.await.unwrap_or_else(|_| {
+            RegistryHandle::from_sod(InstrumentRegistry::from_rows(Vec::new()))
+        });
         *reg.write().await = loaded;
     }
 
@@ -182,11 +180,8 @@ pub async fn spawn_shard_plane(state: Arc<AppState>, env_id: Uuid) -> SharedRegi
     // (The egress pump drains every shard's egress into ONE writer channel.)
     let (tx, rx) = tokio::sync::mpsc::channel::<OutEvent>(64_000);
     crate::events::spawn_outbox_writer(state.core.pool.clone(), rx);
-    let membus = sentin8::membus::ServiceBus::connect(
-        "exchange8:me",
-        &state.core.config.valkey_url,
-    )
-    .await;
+    let membus =
+        sentin8::membus::ServiceBus::connect("exchange8:me", &state.core.config.valkey_url).await;
     tokio::spawn(egress_pump(membus, tx));
 
     registry
@@ -303,7 +298,10 @@ async fn admin_ui_page(
     let page = crate::admin_pages::me_pages()
         .into_iter()
         .find(|p| p.slug == slug)
-        .ok_or((StatusCode::NOT_FOUND, format!("unknown admin page '{slug}'")))?;
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            format!("unknown admin page '{slug}'"),
+        ))?;
     sentin8::shell::policy::require(
         &state.core.admin.policy,
         &a,
@@ -451,9 +449,7 @@ pub struct AuctionRuntime {
 
 /// Publish one indicative (MemBus `me.auction`, fail-soft) — the call
 /// period's imbalance publication (auctions design §3).
-pub fn indicative_event(
-    session: &AuctionRuntime,
-) -> serde_json::Value {
+pub fn indicative_event(session: &AuctionRuntime) -> serde_json::Value {
     let ind = session.engine.indicative();
     serde_json::json!({
         "instrument_id": session.session.instrument_id,
@@ -467,7 +463,10 @@ pub fn indicative_event(
 /// Run one shard auction's uncross: engine compute → durable row advance +
 /// outbox event + audit rows in ONE transaction (DESIGN.md §3). Returns the result
 /// when non-empty (the empty-book case keeps the session `locked`).
-pub async fn uncross_session(pool: &sqlx::PgPool, rt: &mut AuctionRuntime) -> Option<crate::auction::Uncross> {
+pub async fn uncross_session(
+    pool: &sqlx::PgPool,
+    rt: &mut AuctionRuntime,
+) -> Option<crate::auction::Uncross> {
     let u = rt.engine.uncross()?;
     // The durable advance (state + participation snapshot + outbox + audit
     // in one tx); the snapshot comes from the engine's accumulated book.

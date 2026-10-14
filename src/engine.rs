@@ -1917,7 +1917,7 @@ mod tests {
         let trades = executed_pairs(&ev);
         assert_eq!(trades.len(), 2);
         assert!(
-            trades.iter().all(|&(_, _, ref px)| *px == 108_455),
+            trades.iter().all(|(_, _, px)| *px == 108_455),
             "fills at resting ask, not the aggressive limit"
         );
         // Order 1 (lifted ask) and order 3 (aggressive buy) fully filled

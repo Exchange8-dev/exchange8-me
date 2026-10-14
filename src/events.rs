@@ -30,8 +30,10 @@
 
 use std::sync::Arc;
 
-use exchange8::contracts::{Envelope, OrderBooked, OrderExecuted, OrderKilled, OrderModified,
-                           OrderRepriced, TransactionRejected};
+use exchange8::contracts::{
+    Envelope, OrderBooked, OrderExecuted, OrderKilled, OrderModified, OrderRepriced,
+    TransactionRejected,
+};
 use uuid::Uuid;
 
 use crate::auction::AuctionType;
@@ -379,10 +381,7 @@ const OUTBOX_FLUSH_TICK_MS: u64 = 5;
 /// (1000 events or 5 ms, whichever first) under one RLS-contexted
 /// transaction per flush. The shell's relay (boot 8b) produces the rows to
 /// Bus — this task only stages them.
-pub fn spawn_outbox_writer(
-    pool: sqlx::PgPool,
-    mut rx: tokio::sync::mpsc::Receiver<OutEvent>,
-) {
+pub fn spawn_outbox_writer(pool: sqlx::PgPool, mut rx: tokio::sync::mpsc::Receiver<OutEvent>) {
     tokio::spawn(async move {
         loop {
             // Collect up to the batch cap; the tick flushes partial batches
@@ -393,8 +392,8 @@ pub fn spawn_outbox_writer(
                 None => break, // channel closed — drain done
             };
             batch.push(first);
-            let deadline =
-                tokio::time::Instant::now() + std::time::Duration::from_millis(OUTBOX_FLUSH_TICK_MS);
+            let deadline = tokio::time::Instant::now()
+                + std::time::Duration::from_millis(OUTBOX_FLUSH_TICK_MS);
             while batch.len() < OUTBOX_BATCH_EVENTS {
                 match tokio::time::timeout_at(deadline, rx.recv()).await {
                     Ok(Some(ev)) => batch.push(ev),
@@ -463,7 +462,7 @@ pub struct EgressPair {
 mod tests {
     use super::*;
     use crate::engine::MatchingEngine;
-    use exchange8::contracts::{AddOrder, Side, Visibility, OrderType, Capacity};
+    use exchange8::contracts::{AddOrder, Capacity, OrderType, Side, Visibility};
 
     fn add(id: u64, inst: u32) -> AddOrder {
         AddOrder {
@@ -553,7 +552,10 @@ mod tests {
         assert!(matches!(events[0], crate::engine::MeEvent::Killed(_)));
         let mut eg = Egress::new();
         eg.emit_all("11111111-1111-1111-1111-111111111111", 0, events);
-        let disabled = tokio_block_on(sentin8::membus::ServiceBus::connect("exchange8:me-test", ""));
+        let disabled = tokio_block_on(sentin8::membus::ServiceBus::connect(
+            "exchange8:me-test",
+            "",
+        ));
         let batch = tokio_block_on(eg.publish_membus(&disabled));
         assert_eq!(batch[0].event_type(), EV_ORDER_KILLED);
         let payload = batch[0].to_payload();

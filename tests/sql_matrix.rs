@@ -136,7 +136,10 @@ async fn rls_matrix_on_representative_table() {
         .bind(env_a())
         .execute(&mut *tx)
         .await;
-    assert!(res.is_err(), "insert without tenant context must be rejected");
+    assert!(
+        res.is_err(),
+        "insert without tenant context must be rejected"
+    );
     sqlx::query("ROLLBACK TO SAVEPOINT no_ctx")
         .execute(&mut *tx)
         .await

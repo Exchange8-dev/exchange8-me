@@ -108,19 +108,17 @@ pub fn me_pages() -> Vec<RfwPage> {
             title: "Matching Engine",
             icon_hex: "0xe8b5",
             scope: "exchange8:order:read",
-            sections: vec![
-                RfwSection::Table {
-                    heading: "Instrument books",
-                    resource: "engine",
-                    columns: vec![
-                        ("instrument_id", "Instrument"),
-                        ("halts", "Status"),
-                        ("open_orders", "Open orders"),
-                        ("best_bid", "Best bid"),
-                        ("best_ask", "Best ask"),
-                    ],
-                },
-            ],
+            sections: vec![RfwSection::Table {
+                heading: "Instrument books",
+                resource: "engine",
+                columns: vec![
+                    ("instrument_id", "Instrument"),
+                    ("halts", "Status"),
+                    ("open_orders", "Open orders"),
+                    ("best_bid", "Best bid"),
+                    ("best_ask", "Best ask"),
+                ],
+            }],
         },
         RfwPage {
             slug: "auctions",
@@ -173,7 +171,7 @@ mod tests {
                 "icon must be a Material code point (hex): {icon}"
             );
             assert!(v["scope"].as_str().unwrap().starts_with("exchange8:"));
-            assert!(v["sections"].as_array().unwrap().len() >= 1);
+            assert!(!v["sections"].as_array().unwrap().is_empty());
         }
     }
 
