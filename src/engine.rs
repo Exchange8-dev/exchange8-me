@@ -3,15 +3,15 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:ME
 // SPDX-License-Identifier: Apache-2.0
 
-//! Ex8:ME matching engine core.
-//!
-//! Deterministic CLOB matching preserving the the platform spec
-//! semantics exactly: price-time + broker-preferencing, board/odd-lot
-//! separation, iceberg reload + time-priority reset, post-only, price
-//! protection, STP, halts, quotation-only.
-//!
-//! Design: `services/me/DESIGN.md` §6 (matching discipline).
-//! Truth: `design/behavior-catalog/messages.json` (ME messages/enums).
+// Ex8:ME matching engine core.
+//
+// Deterministic CLOB matching preserving the the platform spec
+// semantics exactly: price-time + broker-preferencing, board/odd-lot
+// separation, iceberg reload + time-priority reset, post-only, price
+// protection, STP, halts, quotation-only.
+//
+// Design: `services/me/DESIGN.md` §6 (matching discipline).
+// Truth: `design/behavior-catalog/messages.json` (ME messages/enums).
 
 use exchange8::book::{alloc, AllocationMethod, Book, RestingOrder};
 use exchange8::contracts::enums::*;
