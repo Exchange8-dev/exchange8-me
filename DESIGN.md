@@ -1,20 +1,20 @@
-# DESIGN.md: Ex8:ME — Detailed Design Document
+# DESIGN.md: Exchange8:ME — Detailed Design Document
 
 ## 1. Scope & Context
 
-Ex8:ME owns the deterministic matching of order events onto per-instrument
+Exchange8:ME owns the deterministic matching of order events onto per-instrument
 CLOB books inside one environment: the memory-resident books, the input
 journal, the trade-id lease consumption, the auction state machines, and the
 outbound lifecycle/trade event stream. It explicitly does **not** own:
 
-- client protocols (FIX / SOUP / ITCH) — Ex8:Gateway terminates those and
+- client protocols (FIX / SOUP / ITCH) — Exchange8:Gateway terminates those and
   forwards;
-- pre-trade risk authorization — Ex8:Risk gates before traffic reaches ME;
-- market-data book assembly / feed distribution — Ex8:MD consumes ME events;
-- trade persistence and clearing — Ex8:Clearing consumes events; ME owns
+- pre-trade risk authorization — Exchange8:Risk gates before traffic reaches ME;
+- market-data book assembly / feed distribution — Exchange8:MD consumes ME events;
+- trade persistence and clearing — Exchange8:Clearing consumes events; ME owns
   in-flight lifecycle only;
 - market session/calendar persistence, contract master, instruments —
-  Ex8:RefData (ME pre-loads its metadata via the registry);
+  Exchange8:RefData (ME pre-loads its metadata via the registry);
 - event durability fan-out, audit delivery — platform planes (Sentin8:Bus,
   Sentin8:Sys) via the local outbox and journal tables below.
 
@@ -23,12 +23,12 @@ outbound lifecycle/trade event stream. It explicitly does **not** own:
 ```mermaid
 graph TD
     subgraph Env["exchange8 environment (one env_id per tenant env)"]
-        GW["Ex8:Gateway"]
-        OMS["Ex8:OMS"]
-        SOR["Ex8:SOR"]
-        ME["Ex8:ME (exchange8-me)"]
-        MD["Ex8:MD"]
-        CLR["Ex8:Clearing"]
+        GW["Exchange8:Gateway"]
+        OMS["Exchange8:OMS"]
+        SOR["Exchange8:SOR"]
+        ME["Exchange8:ME (exchange8-me)"]
+        MD["Exchange8:MD"]
+        CLR["Exchange8:Clearing"]
     end
     AUTH["Sentin8:Auth (M2M issuance, JWKS)"]
     BUS["Sentin8:Bus"]
@@ -165,7 +165,7 @@ graph TD
 ```mermaid
 sequenceDiagram
     autonumber
-    participant GW as Ex8:Gateway
+    participant GW as Exchange8:Gateway
     participant R as Reader/session
    participant DSP as Dispatcher (shard % N)
     participant SJ as ShardJournal ring
@@ -218,7 +218,7 @@ sequenceDiagram
     autonumber
     participant UI as Sentin8:Dash (RFW)
     participant BFF as Sentin8:BFF
-    participant ME as Ex8:ME admin routes
+    participant ME as Exchange8:ME admin routes
     participant SHIELD as Shield engine cache
     UI->>BFF: POST /proxy/exchange8-me/v1/admin/policy-sets (bearer user token, exchange8:me:policy:write)
     BFF->>ME: delegated call (cert-bound M2M, act= originating user)
@@ -319,7 +319,7 @@ Per-table notes:
 - The matched books, prices, quantities and orders themselves are **not**
   persisted — they live in memory per shard; the input journal (Sentin8:Storage
   objects) plus deterministic replay is the reconstruction path, and trade
-  persistence belongs to Ex8:Clearing as the event sink. Trade/order ids come
+  persistence belongs to Exchange8:Clearing as the event sink. Trade/order ids come
   from platform-managed sequence leases (`exchange8::wire::SequenceLease` —
   batches of 10 000, refill `UPDATE…RETURNING`); this vertical declares no
   sequence table.
@@ -412,9 +412,9 @@ consumer), market-wide status from the fan-out path.
 sequenceDiagram
     autonumber
     participant CL as Client
-    participant GW2 as Ex8:Gateway
-    participant RK as Ex8:Risk (pre-trade)
-    participant ME2 as Ex8:ME
+    participant GW2 as Exchange8:Gateway
+    participant RK as Exchange8:Risk (pre-trade)
+    participant ME2 as Exchange8:ME
     participant BUS3 as Sentin8:Bus
     CL->>GW2: order (FIX/native, user or M2M principal)
     GW2->>RK: authorize (Gateway→Risk authorize DTOs, exchange8::contracts::risk)
@@ -442,8 +442,8 @@ flowchart TD
     E -->|network/5xx| G["relay_attempts++; leave unrelayed; backoff retry"]
     G --> B
     F --> H["Bus stream family (XADD)"]
-    H -->|direct consumer| I1["Ex8:MD consumes (book feed)"]
-    H -->|direct consumer| I2["Ex8:Clearing consumes (trade persistence)"]
+    H -->|direct consumer| I1["Exchange8:MD consumes (book feed)"]
+    H -->|direct consumer| I2["Exchange8:Clearing consumes (trade persistence)"]
     H -->|subscription| I3["Trigger subscription (consumer group) → function / workflow where declared"]
 ```
 
@@ -473,7 +473,7 @@ flowchart TD
   journaled input sequence through the stateless-initialized engine to an
   identical state (trade ids resume from the lease refill at replay start).
 - **Rate limiting / backpressure.** The ME relies on upstream risk and
-  connection limits (Ex8:Gateway / Ex8:Risk own admission); internally every
+  connection limits (Exchange8:Gateway / Exchange8:Risk own admission); internally every
   inbound queue is a bounded mpsc — overflow is backpressure to the upstream
   stream, alerted at the queue watermark, never an unbounded buffer.
 - **Audit journaling.** Admin-domain changes ride
@@ -710,7 +710,7 @@ graph TD
   writer (`events.rs` — the `MeEvent` mapping table in §4; the per-side
   `Executed` carries the common `trade_id`; the `Filled` roll-up stays a
   Clearing-consumed projection, not a second ME event).
-- Cross-service L1 quote source (Ex8:MD consolidated EBBO feeding
+- Cross-service L1 quote source (Exchange8:MD consolidated EBBO feeding
   `QuoteSource` over the bus) is a separate epic — the in-process seam is
   live: `QuoteSource` polls the shard's own journal-fed BBO snapshot and
   the MD feed swaps in behind the same trait.

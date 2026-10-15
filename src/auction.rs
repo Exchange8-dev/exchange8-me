@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:ME
 // SPDX-License-Identifier: Apache-2.0
 
-//! Ex8:ME auction engine — call auction accumulation + uncrossing.
+//! Exchange8:ME auction engine — call auction accumulation + uncrossing.
 //!
 //! Call auctions (opening/closing/volatility/IPO): orders accumulate during
 //! the call; at uncross the engine computes the price maximizing matched

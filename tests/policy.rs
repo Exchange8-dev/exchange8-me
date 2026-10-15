@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:ME
 // SPDX-License-Identifier: Apache-2.0
 
-//! Ex8:ME policy wiring tests — the seeded scope-mirror Shield set.
+//! Exchange8:ME policy wiring tests — the seeded scope-mirror Shield set.
 //!
 //! Per sentin8/design/sentin8-policy-technical-design.md §6 (Definition
 //! of Done 4.2(g)) — proves the exchange8:me wiring with the REAL seeded

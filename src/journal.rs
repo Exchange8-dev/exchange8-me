@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:ME
 // SPDX-License-Identifier: Apache-2.0
 
-//! Ex8:ME journal + trade-id sequencing + price-protection completion.
+//! Exchange8:ME journal + trade-id sequencing + price-protection completion.
 //!
 //! - **Journal**: every inbound message per shard is appended to a
 //!   bounded in-memory ring, serialized as length-prefixed binary chunks
@@ -29,7 +29,7 @@ use exchange8::fixed::Price;
 /// (price-protection's "protected opposite quote").
 ///
 /// The trait is the seam: today's implementation is the engine-local BBO
-/// ([`ShardJournalBbo`] over the shard journal); the cross-service Ex8:MD
+/// ([`ShardJournalBbo`] over the shard journal); the cross-service Exchange8:MD
 /// consolidated feed is a separate epic and installs behind the same trait
 /// (no engine surgery).
 pub trait QuoteSource: Send + Sync {

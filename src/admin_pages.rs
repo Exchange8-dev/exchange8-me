@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:ME
 // SPDX-License-Identifier: Apache-2.0
 
-//! Ex8:ME RFW admin page definitions (Dash renders; ME never ships UI code).
+//! Exchange8:ME RFW admin page definitions (Dash renders; ME never ships UI code).
 //!
 //! Serves the pages the registration declares (`engine`, `auctions`) —
 //! pure data following the sibling `services/refdata/src/admin_ui.rs`

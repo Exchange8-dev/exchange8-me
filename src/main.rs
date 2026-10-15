@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:ME
 // SPDX-License-Identifier: Apache-2.0
 
-//! Ex8:ME service binary — instrument-sharded deterministic matching engine.
+//! Exchange8:ME service binary — instrument-sharded deterministic matching engine.
 //!
 //! Design: `design/sentin8-exchange8-matching-engine-technical-design.md`;
 //! detailed design: `services/me/DESIGN.md` §2.

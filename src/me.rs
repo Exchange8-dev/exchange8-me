@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:ME
 // SPDX-License-Identifier: Apache-2.0
 
-//! Ex8:ME runtime wiring — the per-shard task graph + admin data handlers.
+//! Exchange8:ME runtime wiring — the per-shard task graph + admin data handlers.
 //!
 //! Wires the pure cores (`engine`, `journal`, `shard`, `auction`, `events`)
 //! onto the runtime per DESIGN.md §2/§7:

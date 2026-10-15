@@ -1,7 +1,7 @@
-# BUSINESS.md: Ex8:ME — Business Requirements & Functionality
+# BUSINESS.md: Exchange8:ME — Business Requirements & Functionality
 
 > Audience: product owners, business analysts, and anyone evaluating what
-> Ex8:ME **does for the business**. For architecture read `README.md`;
+> Exchange8:ME **does for the business**. For architecture read `README.md`;
 > for wire-level detail read `DESIGN.md`.
 
 ## 1. Business Purpose
@@ -46,16 +46,16 @@
 
 | Concern | Owning service |
 |---|---|
-| Client connectivity & session protocols (FIX, SOUP, order entry UX) | Ex8:Gateway |
-| Pre-trade risk checks (position, credit, fat-finger limits) | Ex8:Risk |
-| Order lifecycle above the fill (parent orders, allocation, drop copy) | Ex8:OMS |
-| Smart order routing decisions | Ex8:SOR |
-| Market data book assembly / feed publication (ITCH/MOLD) | Ex8:MD |
-| Reference data: instruments, contracts, tick rules, books, calendars | Ex8:RefData |
-| Trade persistence, clearing, netting | Ex8:Clearing |
-| Settlement of cleared trades | Ex8:Settlement |
-| Margin calculation | Ex8:Margin |
-| Market surveillance | Ex8:Surveillance |
+| Client connectivity & session protocols (FIX, SOUP, order entry UX) | Exchange8:Gateway |
+| Pre-trade risk checks (position, credit, fat-finger limits) | Exchange8:Risk |
+| Order lifecycle above the fill (parent orders, allocation, drop copy) | Exchange8:OMS |
+| Smart order routing decisions | Exchange8:SOR |
+| Market data book assembly / feed publication (ITCH/MOLD) | Exchange8:MD |
+| Reference data: instruments, contracts, tick rules, books, calendars | Exchange8:RefData |
+| Trade persistence, clearing, netting | Exchange8:Clearing |
+| Settlement of cleared trades | Exchange8:Settlement |
+| Margin calculation | Exchange8:Margin |
+| Market surveillance | Exchange8:Surveillance |
 | Identity, tokens, authorization decisions engine | Sentin8:Auth / Shield (declared sets) |
 | Event durability & fan-out infrastructure | Sentin8:Bus / Sentin8:MemBus |
 | Audit archival | Sentin8:Sys |
@@ -175,7 +175,7 @@ status distribution.
 
 ## 6. Target-User Roles & Use Cases
 
-| Persona | Role | What they do with Ex8:ME |
+| Persona | Role | What they do with Exchange8:ME |
 |---|---|---|
 | Retail / institutional trader | Order submitter via broker/OMS | Submits limit/IOC/FOK/post-only/iceberg orders through Gateway/OMS; receives fills, kills, rejects |
 | Sell-side broker / market maker | Quoting member | Rests iceberg and post-only quotes; benefits from preferencing and STP policies on their own flow |
@@ -209,16 +209,16 @@ status distribution.
 
 ## 8. Dependencies & Reliance
 
-- **Ex8:Gateway / Ex8:OMS / Ex8:SOR** — the only order sources; ME treats
+- **Exchange8:Gateway / Exchange8:OMS / Exchange8:SOR** — the only order sources; ME treats
   their order ids as opaque and trusts their session and framing.
-- **Ex8:Risk** — pre-trade authorization must have run upstream; ME is not
+- **Exchange8:Risk** — pre-trade authorization must have run upstream; ME is not
   a risk gate.
-- **Ex8:RefData** — instrument metadata (lot size, allocation policy,
+- **Exchange8:RefData** — instrument metadata (lot size, allocation policy,
   status) pre-loaded into the registry; cross-schema read of
   `refdata.security` is the only grant outside the service's schema.
-- **Ex8:MD** — consumes the event stream for book/feed assembly; ME mirrors
+- **Exchange8:MD** — consumes the event stream for book/feed assembly; ME mirrors
   nothing itself.
-- **Ex8:Clearing** — the persistence sink for trades; ME keeps only the
+- **Exchange8:Clearing** — the persistence sink for trades; ME keeps only the
   in-flight lifecycle.
 - **Sentin8:Auth** — all token issuance/verification; M2M workloads
   (`exchange8:me`/`me` streams, `me-audit`, `exchange8-me-tls`) and

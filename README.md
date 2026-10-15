@@ -1,11 +1,11 @@
-# README.md: Ex8:ME
+# README.md: Exchange8:ME
 
 ## 1. Summary
 
-Ex8:ME (Matching Engine) is the deterministic central-limit-order-book (CLOB)
+Exchange8:ME (Matching Engine) is the deterministic central-limit-order-book (CLOB)
 matching core of the exchange8 vertical — the capital-markets matching tier of
-the Sentin8 platform. It accepts order-entry events from Ex8:Gateway, Ex8:OMS,
-and Ex8:SOR re-posts, executes them against per-instrument order books in
+the Sentin8 platform. It accepts order-entry events from Exchange8:Gateway, Exchange8:OMS,
+and Exchange8:SOR re-posts, executes them against per-instrument order books in
 memory, and emits the complete order-lifecycle and trade event stream
 (bookings, executions, kills, modifications, rejections, reprices). The engine
 preserves canonical matching semantics — price-time priority, per-contract
@@ -60,12 +60,12 @@ streams from the upstream services.
 ```mermaid
 graph TD
     subgraph Upstream["Upstream callers (Sentin8 M2M, cert-bound)"]
-        GW["Ex8:Gateway"]
-        OMS["Ex8:OMS"]
-        SOR["Ex8:SOR"]
+        GW["Exchange8:Gateway"]
+        OMS["Exchange8:OMS"]
+        SOR["Exchange8:SOR"]
     end
 
-    subgraph ME["Ex8:ME process (exchange8-me)"]
+    subgraph ME["Exchange8:ME process (exchange8-me)"]
         STREAMS["Direct-stream readers (exchange8::me::client envelopes over exchange8::wire)"]
         DEDUP["Session supervisor: cancel-on-disconnect, sequence leases, order-state recovery"]
         REG["InstrumentRegistry (lot size, allocation) — ArcSwap snapshot"]

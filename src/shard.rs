@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:ME
 // SPDX-License-Identifier: Apache-2.0
 
-//! Ex8:ME shard dispatcher + instrument metadata pre-load (shell core).
+//! Exchange8:ME shard dispatcher + instrument metadata pre-load (shell core).
 //!
 //! Design §4.1: every event for instrument *i* is handled by exactly one
 //! shard — `instrument_id % N_SHARDS` (N = 64 default) — so book mutation

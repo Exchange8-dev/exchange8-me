@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:ME
 // SPDX-License-Identifier: Apache-2.0
 
-//! Ex8:ME typed event emission (DBX producer path).
+//! Exchange8:ME typed event emission (DBX producer path).
 //!
 //! The engine's `MeEvent` drain is the ONLY event source: every lifecycle
 //! and trade event is wrapped in the `Envelope<T>` shape (`event_type`,
