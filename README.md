@@ -19,7 +19,6 @@ The matching core is a pure Rust library (`services/me/src/engine.rs`): no
 clock, no allocation dependency on the caller, no database on the hot path.
 The service binary wraps it in the Sentin8 platform shell (`sentin8::shell`):
 axum HTTP/TLS surface, `--print-registration` self-registration, DB pool,
-health endpoint, Shield (declarative policy) admin API mount, mimalloc
 allocator, and graceful drain. Event fan-out rides the platform planes: a
 MemBus `me.exec` stream class for realtime adopters, a local `me.outbox`
 relayed to Sentin8:Bus, and an `me.audit_journal` pushed to Sentin8:Sys.

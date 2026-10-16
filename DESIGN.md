@@ -90,7 +90,6 @@ graph TD
 The binary boots via `sentin8::shell::serve`:
 
 1. `Sentin8Shell::new("exchange8:me", "EXCHANGE8_ME")` — registration, DB pool
-   (`EXCHANGE8_ME_DATABASE_URL`), health endpoint, mimalloc global allocator,
    graceful drain on `make upgrade-instance`.
 2. `with_state` builds `MeState { core, membus }` — `ServiceBus::connect`
    attaches the MemBus publish handle; an empty `valkey_url` or unreachable
