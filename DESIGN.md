@@ -174,7 +174,7 @@ sequenceDiagram
 
     GW->>R: framed AddOrder envelope (M2M token verified, exchange8:order:write)
     R->>R: session check (order-state recovery, cancel-on-disconnect state)
-    R->>SJ: journal append (ring; returns chunk when full)
+    R->>SJ: journal append (ring, returns chunk when full)
     SJ-->>OUT: chunk → storage sink (fsync on rotate)
     R->>DSP: route by instrument_id % 64 (bounded mpsc)
     DSP->>E: AddOrder
@@ -187,7 +187,7 @@ sequenceDiagram
     end
     OUT->>OUT: INSERT me.outbox (payload, relayed=false) — pg_notify me_outbox_changed
     OUT->>OUT: relay reads unrelayed rows → Bus POST /v1/produce (idempotency_key = row id)
-    Note over OUT: relay failure: row stays unrelayed, relay_attempts++ ; replayable
+    Note over GW,OUT: relay failure: row stays unrelayed, relay_attempts++ , replayable
 ```
 
 ### Request lifecycle — auction call / indicative / uncross
@@ -198,14 +198,14 @@ sequenceDiagram
     participant ADM as Admin / scheduler surface
     participant AE as AuctionEngine (shard)
     participant OUT as Egress (outbox → Bus)
-    ADM->>AE: open_call (PreOpen; auction_type ∈ opening/closing/volatility/ipo/reopen/halt)
+    ADM->>AE: open_call (PreOpen, auction_type ∈ opening/closing/volatility/ipo/reopen/halt)
     loop during call
         ADM->>AE: add AuctionOrder (limit or market) / cancel by order_id
         ADM->>AE: indicative() — price, matched_qty, imbalance
         AE-->>OUT: indicative publication (exchange8:md:auction:imbalance consumers)
     end
     ADM->>AE: uncross() — state → Uncrossing
-    AE->>AE: candidates = buy limits, sell limits, reference price; take max matched (tie: min |imbalance|, then closest to reference)
+    AE->>AE: candidates = buy limits, sell limits, reference price, take max matched (tie: min |imbalance|, then closest to reference)
     AE-->>OUT: Uncross { price, matched_qty, imbalance } — persisted to me.auction (uncross_price)
     AE->>AE: finish() — clear orders, state → Open
     Note over AE: empty book → uncross returns None (no clear price)
@@ -224,12 +224,12 @@ sequenceDiagram
     BFF->>ME: delegated call (cert-bound M2M, act= originating user)
     ME->>SHIELD: same SharedAdminState as request path (HasPolicyAdmin)
     alt policy allows
-        ME-->>BFF: 200 (set recorded; enforce/shadow/disable applied)
+        ME-->>BFF: 200 (set recorded, enforce/shadow/disable applied)
     else no matching permit (forbid beats permit)
-        ME-->>BFF: 403 (fail-closed; shadow mode logs would-deny instead)
+        ME-->>BFF: 403 (fail-closed, shadow mode logs would-deny instead)
     end
     Note over ME: engine / auctions admin pages mounted (§4) — definitions +
-    data endpoints read engine state in-process
+    Note over UI,SHIELD: data endpoints read engine state in-process
 ```
 
 ## 3. Data Model
@@ -424,7 +424,7 @@ sequenceDiagram
         ME2->>ME2: match (single writer, instrument shard)
         ME2-->>GW2: MeEvent drain (Booked/Executed/Killed/Rejected)
         ME2->>BUS3: me.outbox relay → POST /v1/produce (idempotent on row id)
-        BUS3-->>ME2: ack (row marked relayed; retry on failure)
+        BUS3-->>ME2: ack (row marked relayed, retry on failure)
     else risk fail
         RK-->>GW2: rejected (no ME traffic)
     end
