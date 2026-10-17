@@ -1431,7 +1431,7 @@ dependencies = [
 [[package]]
 name = "exchange8"
 version = "0.1.0"
-source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.4#b28ad87de956411f990ca2781c5e57c8dca43279"
+source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.5#b28ad87de956411f990ca2781c5e57c8dca43279"
 dependencies = [
  "exchange8-book",
  "exchange8-contracts",
@@ -1448,7 +1448,7 @@ dependencies = [
 [[package]]
 name = "exchange8-book"
 version = "0.1.0"
-source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.4#b28ad87de956411f990ca2781c5e57c8dca43279"
+source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.5#b28ad87de956411f990ca2781c5e57c8dca43279"
 dependencies = [
  "exchange8-contracts",
  "exchange8-fixed",
@@ -1458,7 +1458,7 @@ dependencies = [
 [[package]]
 name = "exchange8-contracts"
 version = "0.1.0"
-source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.4#b28ad87de956411f990ca2781c5e57c8dca43279"
+source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.5#b28ad87de956411f990ca2781c5e57c8dca43279"
 dependencies = [
  "exchange8-fixed",
  "serde",
@@ -1468,7 +1468,7 @@ dependencies = [
 [[package]]
 name = "exchange8-fix"
 version = "0.1.0"
-source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.4#b28ad87de956411f990ca2781c5e57c8dca43279"
+source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.5#b28ad87de956411f990ca2781c5e57c8dca43279"
 dependencies = [
  "thiserror 1.0.69",
 ]
@@ -1476,7 +1476,7 @@ dependencies = [
 [[package]]
 name = "exchange8-fixed"
 version = "0.1.0"
-source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.4#b28ad87de956411f990ca2781c5e57c8dca43279"
+source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.5#b28ad87de956411f990ca2781c5e57c8dca43279"
 dependencies = [
  "serde",
 ]
@@ -1484,7 +1484,7 @@ dependencies = [
 [[package]]
 name = "exchange8-itch"
 version = "0.1.0"
-source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.4#b28ad87de956411f990ca2781c5e57c8dca43279"
+source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.5#b28ad87de956411f990ca2781c5e57c8dca43279"
 dependencies = [
  "thiserror 1.0.69",
 ]
@@ -1509,7 +1509,7 @@ dependencies = [
 [[package]]
 name = "exchange8-me-client"
 version = "0.1.0"
-source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.4#b28ad87de956411f990ca2781c5e57c8dca43279"
+source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.5#b28ad87de956411f990ca2781c5e57c8dca43279"
 dependencies = [
  "exchange8-contracts",
  "exchange8-wire",
@@ -1519,7 +1519,7 @@ dependencies = [
 [[package]]
 name = "exchange8-mold"
 version = "0.1.0"
-source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.4#b28ad87de956411f990ca2781c5e57c8dca43279"
+source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.5#b28ad87de956411f990ca2781c5e57c8dca43279"
 dependencies = [
  "thiserror 1.0.69",
 ]
@@ -1527,7 +1527,7 @@ dependencies = [
 [[package]]
 name = "exchange8-soup"
 version = "0.1.0"
-source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.4#b28ad87de956411f990ca2781c5e57c8dca43279"
+source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.5#b28ad87de956411f990ca2781c5e57c8dca43279"
 dependencies = [
  "thiserror 1.0.69",
 ]
@@ -1535,7 +1535,7 @@ dependencies = [
 [[package]]
 name = "exchange8-stamp"
 version = "0.1.0"
-source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.4#b28ad87de956411f990ca2781c5e57c8dca43279"
+source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.5#b28ad87de956411f990ca2781c5e57c8dca43279"
 dependencies = [
  "serde",
  "thiserror 1.0.69",
@@ -1544,7 +1544,7 @@ dependencies = [
 [[package]]
 name = "exchange8-wire"
 version = "0.1.0"
-source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.4#b28ad87de956411f990ca2781c5e57c8dca43279"
+source = "git+https://github.com/Exchange8-dev/exchange8-sdk?tag=exchange8-v0.5.5#b28ad87de956411f990ca2781c5e57c8dca43279"
 dependencies = [
  "serde",
  "serde_json",
