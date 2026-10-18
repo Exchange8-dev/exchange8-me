@@ -20,9 +20,10 @@ path = "src/main.rs"
 [dependencies]
 # Platform SDK pin (RS 2.3) - the only cross-repo dependency; carries the
 # entire shared library workspace behind the `sentin8` facade.
-sentin8 = { git = "https://github.com/Sentin8/sentin8-sdk", tag = "sdk-v0.6.5" }
+sentin8 = { git = "https://github.com/Sentin8/sentin8-sdk", tag = "sdk-v0.6.6" }
+utoipa = { version = "5", features = ["chrono", "uuid"] }
 # exchange8 namespace facade pin - carries this vertical's contracts/clients.
-exchange8 = { git = "https://github.com/Exchange8-dev/exchange8-sdk", tag = "exchange8-v0.5.5" }
+exchange8 = { git = "https://github.com/Exchange8-dev/exchange8-sdk", tag = "exchange8-v0.5.6" }
 
 anyhow = "1"
 axum = { version = "0.8", features = ["macros"] }

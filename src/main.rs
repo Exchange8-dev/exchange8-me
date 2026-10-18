@@ -23,6 +23,7 @@ mod events;
 mod journal;
 mod me;
 mod registration;
+mod openapi;
 mod shard;
 
 use std::sync::Arc;

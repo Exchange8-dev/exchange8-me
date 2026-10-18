@@ -268,6 +268,17 @@ pub async fn ingest_modify(_state: &AppState, env_id: Uuid, msg: &ModifyOrder) {
 // ---------------------------------------------------------------------------
 // Admin RFW page handlers (the declared /v1/admin/ui/{engine,auctions})
 // ---------------------------------------------------------------------------
+#[utoipa::path(
+    get,
+    path = "/v1/admin/ui/engine",
+    responses(
+        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 401, description = "Not authenticated"),
+        (status = 403, description = "Forbidden"),
+    ),
+    security(),
+    tag = "exchange8-admin",
+)]
 
 /// `GET /v1/admin/ui/engine` — the RFW page definition (Dash renders it).
 /// Gate: the page's declared scope (the `exchange8:order:read` admin
@@ -279,6 +290,17 @@ pub async fn admin_ui_engine_page(
     admin_ui_page(&state, &headers, "engine").await
 }
 
+#[utoipa::path(
+    get,
+    path = "/v1/admin/ui/auctions",
+    responses(
+        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 401, description = "Not authenticated"),
+        (status = 403, description = "Forbidden"),
+    ),
+    security(),
+    tag = "exchange8-admin",
+)]
 /// `GET /v1/admin/ui/auctions` — the auctions RFW page definition.
 pub async fn admin_ui_auctions_page(
     State(state): State<Arc<AppState>>,
@@ -398,6 +420,17 @@ pub struct AuctionRow {
     /// Scheduled session time.
     pub scheduled_at: String,
 }
+#[utoipa::path(
+    post,
+    path = "/v1/admin/auctions",
+    responses(
+        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 401, description = "Not authenticated"),
+        (status = 403, description = "Forbidden"),
+    ),
+    security(),
+    tag = "exchange8-admin",
+)]
 
 /// `POST /v1/admin/auctions` — the durable auction sessions (RFW table
 /// data; RLS-scoped read of `me.auction`).
