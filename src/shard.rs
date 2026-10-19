@@ -6,12 +6,12 @@
 //! Exchange8:ME shard dispatcher + instrument metadata pre-load (shell core).
 //!
 //! Design §4.1: every event for instrument *i* is handled by exactly one
-//! shard — `instrument_id % N_SHARDS` (N = 64 default) — so book mutation
+//! shard - `instrument_id % N_SHARDS` (N = 64 default) - so book mutation
 //! needs no locks (one tokio task per shard, bounded mpsc in, single
 //! consumer).
 //!
-//! Design §4.2 (hydration constraint): instrument metadata — `lot_size`,
-//! `allocation_method` — loads from the contract master at **startup and
+//! Design §4.2 (hydration constraint): instrument metadata - `lot_size`,
+//! `allocation_method` - loads from the contract master at **startup and
 //! on registry refresh**, never lazily at first order. A book born before
 //! its contract row loads would freeze the default policy (`fifo`,
 //! lot 100) for that instrument's lifetime.
@@ -20,7 +20,7 @@
 //! the metadata registry (ArcSwap-style snapshot swap), and the per-shard
 //! order of operations. The shell hosts the tokio tasks around it.
 //!
-//! Design: `design/sentin8-exchange8-matching-engine-technical-design.md` §4.1–4.2.
+//! Design: `design/sentin8-exchange8-matching-engine-technical-design.md` §4.1-4.2.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -53,7 +53,7 @@ impl Default for InstrumentMeta {
 }
 
 /// The immutable metadata snapshot (ArcSwap payload): startup load +
-/// event-driven refresh swap whole snapshots — readers never see torn
+/// event-driven refresh swap whole snapshots - readers never see torn
 /// state, and a book created after the swap sees the new policy.
 #[derive(Clone, Debug, Default)]
 pub struct InstrumentRegistry {
@@ -70,7 +70,7 @@ impl InstrumentRegistry {
     }
 
     /// Resolve metadata; unknown instruments get the documented default
-    /// (lot 100, fifo) — the same default the engine's lazy path would
+    /// (lot 100, fifo) - the same default the engine's lazy path would
     /// produce, kept consistent for journal replay of pre-registry orders.
     pub fn get(&self, instrument_id: u32) -> InstrumentMeta {
         self.instruments
@@ -94,7 +94,7 @@ pub struct RegistryHandle {
 }
 
 impl RegistryHandle {
-    /// Startup (SOD) load — the shell projects the contract master rows.
+    /// Startup (SOD) load - the shell projects the contract master rows.
     pub fn from_sod(registry: InstrumentRegistry) -> Self {
         RegistryHandle {
             current: Arc::new(registry),

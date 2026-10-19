@@ -10,11 +10,11 @@
 //! `env_id`, per-shard sequence, idempotency key, typed payload) and handed
 //! to the egress pair:
 //!
-//! - the MemBus publisher (fail-soft, `me.exec` stream class — realtime
+//! - the MemBus publisher (fail-soft, `me.exec` stream class - realtime
 //!   adopters; the shell's relay is NOT involved here, `ServiceBus` writes
 //!   Valkey directly),
-//! - the outbox writer task, which batches 1000 events or 5 ms — whichever
-//!   first (DESIGN.md §7 hot-path budget) — into `me.outbox` with
+//! - the outbox writer task, which batches 1000 events or 5 ms - whichever
+//!   first (DESIGN.md §7 hot-path budget) - into `me.outbox` with
 //!   `insert_outbox_row_with_publisher` under one RLS-contexted transaction
 //!   per batch. The shell's outbox relay (boot step 8b) drains the table to
 //!   Sentin8:Bus; ME never re-implements the relay.
@@ -39,12 +39,12 @@ use uuid::Uuid;
 use crate::auction::AuctionType;
 
 // ---------------------------------------------------------------------------
-// Event vocabulary (DESIGN.md §4 table — the exact master-design §7.1 names)
+// Event vocabulary (DESIGN.md §4 table - the exact master-design §7.1 names)
 // ---------------------------------------------------------------------------
 
 /// Stream family for the order/trade lifecycle events.
 ///
-/// Bare dotted service slug (`me.exec`) — the bus key is
+/// Bare dotted service slug (`me.exec`) - the bus key is
 /// `bus:{env}:me.exec`; families cannot carry colons
 /// (`sentin8::bus::outbox::validate_stream_family`), event names carry them.
 pub const FAMILY_EXEC: &str = "me.exec";
@@ -53,21 +53,21 @@ pub const FAMILY_AUCTION: &str = "me.auction";
 /// MemBus stream class for the realtime (newest-wins) mirror.
 pub const MEMBUS_EXEC: &str = "me.exec";
 
-/// `exchange8:me:order:booked` — the order now rests on the book.
+/// `exchange8:me:order:booked` - the order now rests on the book.
 pub const EV_ORDER_BOOKED: &str = "exchange8:me:order:booked";
-/// `exchange8:me:order:killed` — the order left the book (`reason` says why).
+/// `exchange8:me:order:killed` - the order left the book (`reason` says why).
 pub const EV_ORDER_KILLED: &str = "exchange8:me:order:killed";
-/// `exchange8:me:order:modified` — the replace completed.
+/// `exchange8:me:order:modified` - the replace completed.
 pub const EV_ORDER_MODIFIED: &str = "exchange8:me:order:modified";
-/// `exchange8:me:order:repriced` — a non-client price change (protection
+/// `exchange8:me:order:repriced` - a non-client price change (protection
 /// sidestep).
 pub const EV_ORDER_REPRICED: &str = "exchange8:me:order:repriced";
-/// `exchange8:me:order:rejected` — an add/cancel/modify was rejected.
+/// `exchange8:me:order:rejected` - an add/cancel/modify was rejected.
 pub const EV_ORDER_REJECTED: &str = "exchange8:me:order:rejected";
-/// `exchange8:me:trade:executed` — one per side per execution, common
+/// `exchange8:me:trade:executed` - one per side per execution, common
 /// `trade_id`.
 pub const EV_TRADE_EXECUTED: &str = "exchange8:me:trade:executed";
-/// `exchange8:me:auction:uncrossed` — an auction session cleared.
+/// `exchange8:me:auction:uncrossed` - an auction session cleared.
 pub const EV_AUCTION_UNCROSSED: &str = "exchange8:me:auction:uncrossed";
 
 // ---------------------------------------------------------------------------
@@ -77,7 +77,7 @@ pub const EV_AUCTION_UNCROSSED: &str = "exchange8:me:auction:uncrossed";
 /// The typed envelope the egress tasks carry (one wire form for both the
 /// direct-stream and bus-mirror transports).
 ///
-/// Mirrors the engine's `MeEvent` variants 1:1 — the engine never formats
+/// Mirrors the engine's `MeEvent` variants 1:1 - the engine never formats
 /// JSON; this enum is the serialization boundary so the hot path keeps
 /// pushing typed payloads.
 #[derive(Debug, Clone)]
@@ -103,7 +103,7 @@ pub enum OutEvent {
     },
 }
 
-/// `exchange8:me:auction:uncrossed` payload (auctions design §3 — the
+/// `exchange8:me:auction:uncrossed` payload (auctions design §3 - the
 /// self-contained clearing snapshot; MD/SOR react from the payload alone).
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AuctionUncrossPayload {
@@ -160,7 +160,7 @@ impl OutEvent {
     }
 
     /// The full JSON payload the outbox row stores (payload-complete
-    /// envelope — consumers react from the event alone).
+    /// envelope - consumers react from the event alone).
     pub fn to_payload(&self) -> serde_json::Value {
         serde_json::to_value(self).expect("me event payload serializes")
     }
@@ -170,7 +170,7 @@ impl serde::Serialize for OutEvent {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeStruct;
         // The JSON form carries event_type + env_id + the idempotency key +
-        // the typed payload under "payload" — the envelope shape the
+        // the typed payload under "payload" - the envelope shape the
         // consumers (and the direct-stream frames) already share.
         let event_type = self.event_type();
         let mut st = s.serialize_struct("OutEvent", 3)?;
@@ -222,7 +222,7 @@ impl<'de> serde::Deserialize<'de> for OutEvent {
     fn deserialize<D: serde::Deserializer<'de>>(_d: D) -> Result<Self, D::Error> {
         // Deserialization is not on the producer path (the writer serializes;
         // the relay re-drains rows from the outbox table). Kept explicit so
-        // the contract stays honest — consumers decode typed envelopes, not
+        // the contract stays honest - consumers decode typed envelopes, not
         // this producer enum.
         Err(serde::de::Error::custom(
             "OutEvent is a producer-side enum; consumers decode Envelope<T>",
@@ -237,7 +237,7 @@ fn parse_env(env_id: &str) -> Uuid {
 }
 
 // ---------------------------------------------------------------------------
-// Drainer — the engine → egress bridge (bounded channel + per-shard seq)
+// Drainer - the engine → egress bridge (bounded channel + per-shard seq)
 // ---------------------------------------------------------------------------
 
 /// Bounded egress channel capacity (events, not bytes): backpressure the
@@ -255,7 +255,7 @@ pub struct Egress {
 }
 
 impl Egress {
-    /// Open the egress pair (one per shard — sequence domains stay per-shard).
+    /// Open the egress pair (one per shard - sequence domains stay per-shard).
     pub fn new() -> Self {
         let (tx, rx) = exchange8::wire::channel(EVENT_CHANNEL_CAPACITY);
         Egress { tx, rx, seq: 0 }
@@ -265,7 +265,7 @@ impl Egress {
     /// for the egress tasks.
     ///
     /// # Panics
-    /// Never — the bounded `try_send` applies backpressure (a full channel
+    /// Never - the bounded `try_send` applies backpressure (a full channel
     /// drops the DRAIN only after the watermark, mirroring the MemBus
     /// fail-soft contract; the outbox path re-emits from the journal on
     /// replay).
@@ -310,7 +310,7 @@ impl Egress {
                 }),
                 crate::engine::MeEvent::Filled(p) => OutEvent::Booked(Envelope {
                     // The terminal full-fill still carries the booked shape
-                    // (visible volume now 0) — the Filled roll-up is a
+                    // (visible volume now 0) - the Filled roll-up is a
                     // Clearing-side projection (DESIGN.md §4).
                     event_type: EV_ORDER_BOOKED.into(),
                     env_id: env_id.into(),
@@ -336,12 +336,12 @@ impl Egress {
                     payload: p,
                 }),
             };
-            // try_send: bounded backpressure — a saturated channel drops the
+            // try_send: bounded backpressure - a saturated channel drops the
             // STAGE attempt with a watermark warn (the durable outbox path
             // is fed from the same drain at the writer task's own tick; the
             // journal replays lost events deterministically).
             if self.tx.try_send(event).is_err() {
-                tracing::warn!(shard, "me egress: event channel saturated — event dropped");
+                tracing::warn!(shard, "me egress: event channel saturated - event dropped");
             }
         }
     }
@@ -369,7 +369,7 @@ impl Default for Egress {
 }
 
 // ---------------------------------------------------------------------------
-// Outbox writer task (batch budget: 1000 events / 5 ms — DESIGN.md §7)
+// Outbox writer task (batch budget: 1000 events / 5 ms - DESIGN.md §7)
 // ---------------------------------------------------------------------------
 
 /// Writer budget: maximum events per INSERT batch.
@@ -380,7 +380,7 @@ const OUTBOX_FLUSH_TICK_MS: u64 = 5;
 /// Spawn the outbox-writer task: batch `OutEvent`s into `me.outbox` rows
 /// (1000 events or 5 ms, whichever first) under one RLS-contexted
 /// transaction per flush. The shell's relay (boot 8b) produces the rows to
-/// Bus — this task only stages them.
+/// Bus - this task only stages them.
 pub fn spawn_outbox_writer(pool: sqlx::PgPool, mut rx: tokio::sync::mpsc::Receiver<OutEvent>) {
     tokio::spawn(async move {
         loop {
@@ -389,7 +389,7 @@ pub fn spawn_outbox_writer(pool: sqlx::PgPool, mut rx: tokio::sync::mpsc::Receiv
             let mut batch: Vec<OutEvent> = Vec::with_capacity(OUTBOX_BATCH_EVENTS);
             let first = match rx.recv().await {
                 Some(ev) => ev,
-                None => break, // channel closed — drain done
+                None => break, // channel closed - drain done
             };
             batch.push(first);
             let deadline = tokio::time::Instant::now()
@@ -398,14 +398,14 @@ pub fn spawn_outbox_writer(pool: sqlx::PgPool, mut rx: tokio::sync::mpsc::Receiv
                 match tokio::time::timeout_at(deadline, rx.recv()).await {
                     Ok(Some(ev)) => batch.push(ev),
                     Ok(None) => break,
-                    Err(_) => break, // tick expired — flush what we have
+                    Err(_) => break, // tick expired - flush what we have
                 }
             }
             if let Err(e) = write_batch(&pool, &batch).await {
-                tracing::error!(error = %e, events = batch.len(), "me outbox writer: batch write failed — rows lost from this pass");
+                tracing::error!(error = %e, events = batch.len(), "me outbox writer: batch write failed - rows lost from this pass");
             }
         }
-        tracing::info!("me outbox writer: channel closed — stopped");
+        tracing::info!("me outbox writer: channel closed - stopped");
     });
 }
 
@@ -523,7 +523,7 @@ mod tests {
         assert!(matches!(events[0], crate::engine::MeEvent::Booked(_)));
         let mut eg = Egress::new();
         eg.emit_all("11111111-1111-1111-1111-111111111111", 3, events);
-        // MemBus stage: the disabled (URL-less) bus is a no-op consumer —
+        // MemBus stage: the disabled (URL-less) bus is a no-op consumer -
         // the batch must still return for the outbox writer.
         let disabled = tokio_block_on(sentin8::membus::ServiceBus::connect(
             "exchange8:me-test",

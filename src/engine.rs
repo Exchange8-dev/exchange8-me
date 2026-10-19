@@ -124,7 +124,7 @@ impl MatchingEngine {
         }
     }
 
-    /// The next trade id the engine hands out (the journal-lease frontier —
+    /// The next trade id the engine hands out (the journal-lease frontier -
     /// the shell seeds it from the platform lease refill at boot/replay).
     pub fn set_trade_id_frontier(&mut self, start: u64) {
         self.next_trade_id = start;
@@ -153,7 +153,7 @@ impl MatchingEngine {
             Some(cur) => {
                 if cur != status && status == InstrumentStatus::Halted {
                     // `Halt`: cancel all resting orders (drop the
-                    // borrow first — `cancel_by_id` needs `&mut self`).
+                    // borrow first - `cancel_by_id` needs `&mut self`).
                     let ids: Vec<u64> = self
                         .books
                         .get(&instrument_id)
@@ -392,12 +392,12 @@ impl MatchingEngine {
             }
             // Walk opposite levels best-first. Termination: every iteration
             // either decreases `to_match`, removes/reduces a resting order
-            // (shrinking the book), or breaks — no state is left unchanged.
+            // (shrinking the book), or breaks - no state is left unchanged.
             loop {
                 if to_match == 0 {
                     break;
                 }
-                // Find the best matching level (best-first iteration —
+                // Find the best matching level (best-first iteration -
                 // the ordered map yields levels already sorted).
                 let (level_price, _level_visible): (Option<(Price, bool)>, ()) = {
                     let ib = self.books.get(&msg.instrument_id).expect("book exists");
@@ -569,7 +569,7 @@ impl MatchingEngine {
                         );
                     }
                     if to_match > 0 {
-                        // Level fully consumed under pro-rata — continue the
+                        // Level fully consumed under pro-rata - continue the
                         // level walk for the next best level.
                         continue;
                     }
@@ -928,7 +928,7 @@ impl MatchingEngine {
 
     /// Consume a resting order by `fill`; handles removal and iceberg reload
     /// (reload moves the order to the **tail** of the FIFO and bumps the
-    /// sub-order count — time priority resets on reload).
+    /// sub-order count - time priority resets on reload).
     fn consume_resting(
         &mut self,
         instrument_id: u32,
@@ -986,7 +986,7 @@ impl MatchingEngine {
         self.cancel_by_id(msg.instrument_id, msg.order_id, KillReason::ClientRequest);
     }
 
-    /// 'u' — modify price/qty/floor of a resting order.
+    /// 'u' - modify price/qty/floor of a resting order.
     ///
     /// Price or qty **increase** loses time priority (remove + reinsert at
     /// tail); a pure decrease keeps priority in place. Qty decrease reduces
@@ -1644,7 +1644,7 @@ mod tests {
                 _ => None,
             })
             .collect();
-        // Strict arrival order, full quantity each — no partial splits.
+        // Strict arrival order, full quantity each - no partial splits.
         let expected: Vec<(u64, u64)> = (1..=30u64).map(|id| (id, 100)).collect();
         assert_eq!(passive, expected, "fills must be strictly FIFO by arrival");
         // Aggressive order fully filled, nothing rests.
@@ -1661,10 +1661,10 @@ mod tests {
 
     #[test]
     fn partial_sweep_fifo_prefix_only() {
-        // A partial sweep takes a strict FIFO PREFIX of the level — orders
+        // A partial sweep takes a strict FIFO PREFIX of the level - orders
         // 1..k fully, k+1 partially, the rest untouched. Pro-rata would
         // touch every order. Note: the aggressive qty must be board-round
-        // (300 = 3 lots) — a mixed qty splits board/odd and the odd part
+        // (300 = 3 lots) - a mixed qty splits board/odd and the odd part
         // rests in the odd book by design (board orders never fill odd).
         let mut me = MatchingEngine::new();
         for id in 1..=10u64 {
@@ -1754,7 +1754,7 @@ mod tests {
                 _ => None,
             })
             .collect();
-        // Every order at the level participates — 30 each, 10 orders.
+        // Every order at the level participates - 30 each, 10 orders.
         assert_eq!(passive.len(), 10);
         for (id, qty) in &passive {
             assert_eq!(*qty, 30, "order {id} must get its pro-rata share");
@@ -1847,7 +1847,7 @@ mod tests {
     }
 
     // ------------------------------------------------------------------
-    // FX CLOB verification — FX pairs trade on the same engine
+    // FX CLOB verification - FX pairs trade on the same engine
     // with scale-5 pip prices and lot_size=1 (no board/odd split).
     // ------------------------------------------------------------------
 
@@ -1879,7 +1879,7 @@ mod tests {
     #[test]
     fn fx_clob_matches_at_pipette_precision() {
         let mut me = MatchingEngine::new();
-        // Seed the FX instrument book with lot_size 1 — a lot of 1 unit
+        // Seed the FX instrument book with lot_size 1 - a lot of 1 unit
         // means every quantity is board-round: the board/odd split is a
         // no-op and all volume routes to the board book (DESIGN.md §6).
         me.book(2, Qty::units(1));
@@ -1906,7 +1906,7 @@ mod tests {
     fn fx_fractional_pip_spread_crosses_correctly() {
         let mut me = MatchingEngine::new();
         me.book(2, Qty::units(1));
-        // Best ask 1.08455 (pipette), best bid 1.08450 — a half-pip spread.
+        // Best ask 1.08455 (pipette), best bid 1.08450 - a half-pip spread.
         me.add_order(&fx_add(1, Side::Ask, 108_455, 50_000));
         me.add_order(&fx_add(2, Side::Bid, 108_450, 50_000));
         me.drain_events();
@@ -1934,7 +1934,7 @@ mod tests {
     fn fx_lot_one_no_board_odd_split() {
         let mut me = MatchingEngine::new();
         me.book(2, Qty::units(1));
-        // 7 units of EURUSD — at lot_size 1 the split is (7, 0): the odd
+        // 7 units of EURUSD - at lot_size 1 the split is (7, 0): the odd
         // book never receives volume, matching FX spot conventions where
         // every unit quantity is tradable.
         me.add_order(&fx_add(1, Side::Bid, 108_450, 7));

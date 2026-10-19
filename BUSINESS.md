@@ -1,4 +1,4 @@
-# Exchange8:ME — Business Requirements & Functionality
+# Exchange8:ME - Business Requirements & Functionality
 
 > Audience: product owners, business analysts, and anyone evaluating what
 > Exchange8:ME **does for the business**. For architecture read `README.md`;
@@ -8,7 +8,7 @@
 
 - Operate the exchange's central order book: match buy and sell interest
   fairly, transparently, and deterministically for every instrument the
-  venue lists — equities, futures, FX, crypto-shaped products.
+  venue lists - equities, futures, FX, crypto-shaped products.
 - Guarantee fill fairness under audit: price-time priority (with
   contract-defined pro-rata variants), strictly reproducible outcomes, and a
   complete event trail of every order booking, execution, kill, and
@@ -66,9 +66,9 @@
 
 | Capability | Business rule |
 |---|---|
-| Best execution | Incoming orders execute against the best available price on the opposite side; execution price is always the resting order's price — never a blended rate |
+| Best execution | Incoming orders execute against the best available price on the opposite side; execution price is always the resting order's price - never a blended rate |
 | Price-time priority (default) | On FIFO contracts, an aggressive order consumes a strict prefix of each price level: earliest orders in full, at most one partially, later orders untouched |
-| Pro-rata allocation (contract-specific) | Futures/hybrid contracts distribute fills proportionally to resting size, with a deterministic indivisible remainder — no order at the level is skipped |
+| Pro-rata allocation (contract-specific) | Futures/hybrid contracts distribute fills proportionally to resting size, with a deterministic indivisible remainder - no order at the level is skipped |
 | Broker preferencing | When the instrument prefers brokers, the incoming order first fills resting orders of its own customer, even at inferior prices, before the open book |
 | Immediate-or-cancel | Any unfilled remainder is killed immediately; partial fills stand |
 | Fill-or-kill | The order fills entirely against available liquidity or does not trade at all (pre-check of opposite volume; no partials) |
@@ -95,7 +95,7 @@
 | Call period | Orders accumulate (auction limits, market-on-open/close, market orders); participants may cancel during the call |
 | Indicative publication | During the call the engine continuously derives indicative price, matched volume, and signed imbalance so participants can react |
 | Uncrossing | A single clearing price maximizes matched volume; ties resolve by smallest absolute imbalance, then closest to the reference (previous close / last trade) price |
-| Uncross integrity | Executions clear at the single auction price — no partial-price fills; the residual imbalance is published |
+| Uncross integrity | Executions clear at the single auction price - no partial-price fills; the residual imbalance is published |
 
 ### Order administration & recovery
 
@@ -111,7 +111,7 @@
 ## 4. Business Events (Outbound)
 
 Emitted lifecycle/trade events (consumed in realtime via the `me.exec`
-MemBus stream class; durably delivered via `me.outbox` → Sentin8:Bus —
+MemBus stream class; durably delivered via `me.outbox` → Sentin8:Bus -
 every capability maps to one of these exact event strings, batched into
 the outbox in groups of 1000 events or 5 ms):
 
@@ -123,7 +123,7 @@ the outbox in groups of 1000 events or 5 ms):
 | `exchange8:me:order:modified` | Order replaced (new id, new price/qty/floor) |
 | `exchange8:me:order:rejected` | Halted instrument, quotation-only violation, unknown-order cancel/modify |
 | `exchange8:me:order:repriced` | Price-protection sidestep applied before matching |
-| `exchange8:me:auction:uncrossed` (`me.auction` family) | Call ends: durable session completes — clearing price, matched quantity, residual imbalance, participation snapshot |
+| `exchange8:me:auction:uncrossed` (`me.auction` family) | Call ends: durable session completes - clearing price, matched quantity, residual imbalance, participation snapshot |
 
 Inbound events consumed: contract-master / instrument metadata updates
 (registry refresh), Shield policy-set updates (policy cache), market-wide
@@ -131,7 +131,7 @@ status distribution.
 
 ## 5. Business Rules & Invariants
 
-1. Execution price is always the resting order's price — the passive side
+1. Execution price is always the resting order's price - the passive side
    sets the price; aggressors never blend.
 2. Both sides of one fill share a single trade id; every execution produces
    exactly one event per side.
@@ -196,7 +196,7 @@ status distribution.
 - **Fairness fidelity**: zero FIFO-prefix or pro-rata violations in the
   property-test suite (CI-enforced); identical replay output for every
   recovery.
-- **Correctness under audit**: complete event trail — every accepted input
+- **Correctness under audit**: complete event trail - every accepted input
   journaled; every fill paired per side with a shared trade id and passive
   price.
 - **Availability**: matches continue through market-data and bus outages;
@@ -209,28 +209,28 @@ status distribution.
 
 ## 8. Dependencies & Reliance
 
-- **Exchange8:Gateway / Exchange8:OMS / Exchange8:SOR** — the only order sources; ME treats
+- **Exchange8:Gateway / Exchange8:OMS / Exchange8:SOR** - the only order sources; ME treats
   their order ids as opaque and trusts their session and framing.
-- **Exchange8:Risk** — pre-trade authorization must have run upstream; ME is not
+- **Exchange8:Risk** - pre-trade authorization must have run upstream; ME is not
   a risk gate.
-- **Exchange8:RefData** — instrument metadata (lot size, allocation policy,
+- **Exchange8:RefData** - instrument metadata (lot size, allocation policy,
   status) pre-loaded into the registry; cross-schema read of
   `refdata.security` is the only grant outside the service's schema.
-- **Exchange8:MD** — consumes the event stream for book/feed assembly; ME mirrors
+- **Exchange8:MD** - consumes the event stream for book/feed assembly; ME mirrors
   nothing itself.
-- **Exchange8:Clearing** — the persistence sink for trades; ME keeps only the
+- **Exchange8:Clearing** - the persistence sink for trades; ME keeps only the
   in-flight lifecycle.
-- **Sentin8:Auth** — all token issuance/verification; M2M workloads
+- **Sentin8:Auth** - all token issuance/verification; M2M workloads
   (`exchange8:me`/`me` streams, `me-audit`, `exchange8-me-tls`) and
   cert-bound defaults.
-- **Sentin8:Policy (Shield)** — the only authorization gate; policy-set
+- **Sentin8:Policy (Shield)** - the only authorization gate; policy-set
   cache shared between admin and runtime paths.
-- **Sentin8:Bus / Sentin8:MemBus** — durable event delivery (outbox relay)
+- **Sentin8:Bus / Sentin8:MemBus** - durable event delivery (outbox relay)
   and realtime publication; both degrade without blocking matching.
-- **Sentin8:Sys** — audit ingest and the TLS hostname resolution owner API.
-- **Sentin8:DB (PostgreSQL 18, db `exchange8`, schema `me`)** — auction
+- **Sentin8:Sys** - audit ingest and the TLS hostname resolution owner API.
+- **Sentin8:DB (PostgreSQL 18, db `exchange8`, schema `me`)** - auction
   sessions, outbox, audit journal; never touched without a tenant context.
-- **Platform shell (`sentin8::shell`)** — registration, pool, health, drain,
+- **Platform shell (`sentin8::shell`)** - registration, pool, health, drain,
   allocator; and `sentin8-tls` for in-process post-quantum TLS.
 
 ## 9. Acceptance Criteria
@@ -281,7 +281,7 @@ status distribution.
   is being finalized).
 - Publicly documented fee/charge flags (midpoint charge, principal/wash
   trade markers) are carried by the event format but their business
-  calculation rules live with downstream consumers — to be codified with
+  calculation rules live with downstream consumers - to be codified with
   clearing.
 - Auction scheduling policy for the venue (which calendar events trigger
   which auction types per market, and who may initiate intraday auctions)

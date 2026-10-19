@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:ME
 // SPDX-License-Identifier: Apache-2.0
 
-//! Exchange8:ME auction engine — call auction accumulation + uncrossing.
+//! Exchange8:ME auction engine - call auction accumulation + uncrossing.
 //!
 //! Call auctions (opening/closing/volatility/IPO): orders accumulate during
 //! the call; at uncross the engine computes the price maximizing matched
@@ -18,7 +18,7 @@
 //! (`scheduled → accepting → locked → uncrossing → complete|cancelled`)
 //! state machines cannot diverge at an uncross.
 //!
-//! Design: `design/sentin8-exchange8-auctions-technical-design.md` §3–4;
+//! Design: `design/sentin8-exchange8-auctions-technical-design.md` §3-4;
 //! durable binding: `services/me/DESIGN.md` §3.
 
 use uuid::Uuid;
@@ -60,7 +60,7 @@ impl AuctionType {
 }
 
 /// The durable `me.auction.state` vocabulary (the engine's in-memory states
-/// map onto these scheduling stages — DESIGN.md §3 state-row binding).
+/// map onto these scheduling stages - DESIGN.md §3 state-row binding).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DurableAuctionState {
     /// Session scheduled, call not started.
@@ -205,7 +205,7 @@ impl AuctionEngine {
     }
 
     /// Publish the accumulated participation snapshot ((order_id, is_buy,
-    /// limit price, qty) per order) — the uncross transaction writes these
+    /// limit price, qty) per order) - the uncross transaction writes these
     /// as the `me.auction_order` rows (DESIGN.md §3).
     pub fn orders_snapshot(&self) -> Vec<(u64, bool, Option<i128>, i128)> {
         self.orders
@@ -293,7 +293,7 @@ impl AuctionEngine {
 
     /// End the call and compute the uncrossing (design §3):
     /// maximize matched volume, tie-break by max surplus (matched × distance
-    /// to nothing — here: the smaller side's headroom), then min |imbalance|,
+    /// to nothing - here: the smaller side's headroom), then min |imbalance|,
     /// then closest to the reference price.
     pub fn uncross(&mut self) -> Option<Uncross> {
         self.state = AuctionState::Uncrossing;
@@ -346,12 +346,12 @@ impl AuctionEngine {
 }
 
 // ---------------------------------------------------------------------------
-// Durable session binding (DESIGN.md §3 — the me.auction row lifecycle)
+// Durable session binding (DESIGN.md §3 - the me.auction row lifecycle)
 // ---------------------------------------------------------------------------
 
 /// One durable auction session: the `me.auction` row identity the shard's
 /// auction task advances in the same transaction as the outbox event and
-/// the audit journal rows (DESIGN.md §3 — the in-memory and durable state machines
+/// the audit journal rows (DESIGN.md §3 - the in-memory and durable state machines
 /// advance together, never independently).
 #[derive(Debug, Clone, PartialEq)]
 pub struct DurableSession {
@@ -372,7 +372,7 @@ pub struct DurableSession {
 impl DurableSession {
     /// The one valid durable transition when the engine finishes an (possibly
     /// empty) uncross: `locked → uncrossing → complete` on success;
-    /// `accepting → cancelled` semantics hold when the operator withdraws —
+    /// `accepting → cancelled` semantics hold when the operator withdraws -
     /// a completed uncross always lands `complete` (the empty-book case
     /// stays `locked`, retried on the next window).
     pub fn advance_after_uncross(&mut self, uncrossed: bool) -> Option<DurableAuctionState> {
@@ -398,11 +398,11 @@ impl DurableSession {
 /// transaction: state UPDATE → `me.auction_order` uncross snapshot →
 /// `me.outbox` INSERT (`exchange8:me:auction:uncrossed`, family
 /// `me.auction`) → `me.audit_journal` rows. Any failure aborts the whole
-/// pair (DESIGN.md §6: the uncross transaction owns the row update —
+/// pair (DESIGN.md §6: the uncross transaction owns the row update -
 /// the durable state machine cannot lag the published event).
 ///
 /// # Errors
-/// Propagates the SQL error — the caller keeps the session `locked` and
+/// Propagates the SQL error - the caller keeps the session `locked` and
 /// retries on the next window (no partial state, no orphan event).
 pub async fn commit_uncross(
     pool: &sqlx::PgPool,
@@ -429,13 +429,13 @@ pub async fn commit_uncross(
     .execute(&mut *tx)
     .await?;
     if guarded.rows_affected() == 0 {
-        // Already advanced (re-delivery) or concurrently withdrawn — the
+        // Already advanced (re-delivery) or concurrently withdrawn - the
         // caller treats this as a deduped no-op.
         tx.commit().await?;
         return Ok(session.auction_id);
     }
 
-    // 2. The participating-orders snapshot (auction_order rows — the
+    // 2. The participating-orders snapshot (auction_order rows - the
     //    engine's accumulated book at uncross time).
     for (order_id, is_buy, limit_price, qty) in orders {
         sqlx::query(
@@ -552,7 +552,7 @@ mod tests {
         a.open_call();
         a.add(limit(1, true, 10_100, 100)); // buy 100 @ up to 10.01
         a.add(limit(2, false, 9_900, 100)); // sell 100 @ down to 9.99
-                                            // Overlap 9.99–10.01: candidates include both limits; max volume
+                                            // Overlap 9.99-10.01: candidates include both limits; max volume
                                             // (100) is achieved at both; tie-break with no reference keeps the
                                             // first-seen candidate order (sorted ascending → 9_900 first)…
                                             // but 9_900 yields matched=100 as does 10_100.
@@ -716,7 +716,7 @@ mod tests {
 
     #[test]
     fn durable_state_vocabulary_round_trips() {
-        // Every CHECK vocabulary key round-trips (from_db ↔ as_str) — the
+        // Every CHECK vocabulary key round-trips (from_db ↔ as_str) - the
         // row-state reader never invents a state.
         for s in [
             DurableAuctionState::Scheduled,

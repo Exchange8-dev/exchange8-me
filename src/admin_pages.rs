@@ -5,7 +5,7 @@
 
 //! Exchange8:ME RFW admin page definitions (Dash renders; ME never ships UI code).
 //!
-//! Serves the pages the registration declares (`engine`, `auctions`) —
+//! Serves the pages the registration declares (`engine`, `auctions`) -
 //! pure data following the sibling `services/refdata/src/admin_ui.rs`
 //! `to_rfw` pattern: definitions are JSON, data endpoints alias the same
 //! handlers (RFW renderer only supports POST for actions).
@@ -100,7 +100,7 @@ impl RfwPage {
     }
 }
 
-/// The ME admin pages — the declared RFW set (`engine`, `auctions`).
+/// The ME admin pages - the declared RFW set (`engine`, `auctions`).
 pub fn me_pages() -> Vec<RfwPage> {
     vec![
         RfwPage {
@@ -161,7 +161,7 @@ mod tests {
         for page in pages {
             let v = page.to_rfw();
             assert_eq!(v["slug"], page.slug);
-            // Icons are Material code points — hex strings (the `0x` prefix
+            // Icons are Material code points - hex strings (the `0x` prefix
             // is the registration payload's spelling, accepted by Dash).
             let icon = v["icon"].as_str().unwrap();
             assert!(
@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn action_resources_are_post_friendly() {
-        // The RFW renderer only supports POST — actions never name PUT/DELETE.
+        // The RFW renderer only supports POST - actions never name PUT/DELETE.
         for page in me_pages() {
             for s in &page.sections {
                 if let RfwSection::Action { resource, .. } = s {

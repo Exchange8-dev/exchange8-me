@@ -9,9 +9,9 @@
 //!   bounded in-memory ring, serialized as length-prefixed binary chunks
 //!   for the Sentin8:Storage sink (`me-journal/{env}/{date}/shard-{n}.bin`,
 //!   rotated per session, fsync on rotate). Recovery: rebuild from journal
-//!   tail or full replay — deterministic engine ⇒ identical book state.
+//!   tail or full replay - deterministic engine ⇒ identical book state.
 //! - **Trade-id lease**: platform sequence facility batch-lease
-//!   (10k per lease) — the pure lease counter with rollover semantics;
+//!   (10k per lease) - the pure lease counter with rollover semantics;
 //!   the shell performs the lease refill.
 //! - **Protection completion**: the Kill variant of price
 //!   protection (Kill vs Post sidestep) as a pure decision.
@@ -22,7 +22,7 @@ use exchange8::contracts::events::{AddOrder, CancelOrder, ModifyOrder};
 use exchange8::fixed::Price;
 
 // ---------------------------------------------------------------------------
-// Quote source (DESIGN.md §7 — L1 seam)
+// Quote source (DESIGN.md §7 - L1 seam)
 // ---------------------------------------------------------------------------
 
 /// The protected-quote source the matching engine polls before matching
@@ -33,7 +33,7 @@ use exchange8::fixed::Price;
 /// consolidated feed is a separate epic and installs behind the same trait
 /// (no engine surgery).
 pub trait QuoteSource: Send + Sync {
-    /// The best opposite-side price for the instrument (`None` = no quote —
+    /// The best opposite-side price for the instrument (`None` = no quote -
     /// protection passes untouched, journal.rs `protection_check`).
     fn best(&self, instrument_id: u32, is_bid_side: bool) -> Option<Price>;
 }
@@ -71,7 +71,7 @@ pub enum JournalEntry {
 
 impl JournalEntry {
     /// Deterministic binary encoding (little-endian, length-prefixed by the
-    /// writer). Layout: 1 type byte + serde payload — the pure core keeps
+    /// writer). Layout: 1 type byte + serde payload - the pure core keeps
     /// the framing stable for golden tests.
     pub fn encode(&self) -> Vec<u8> {
         let mut b = Vec::with_capacity(64);
@@ -116,7 +116,7 @@ pub struct ShardJournal {
     session: u64,
     /// Entries appended this session (the ring).
     ring: std::collections::VecDeque<JournalEntry>,
-    /// Ring capacity — flush triggers before overflow.
+    /// Ring capacity - flush triggers before overflow.
     capacity: usize,
     /// Total entries written across sessions (recovery cursor).
     written: u64,
@@ -152,7 +152,7 @@ impl ShardJournal {
     /// The journal's engine-local BBO for one instrument side: the best
     /// resting price of the most recent opposite book state the journal saw.
     ///
-    /// The journal is the deterministic input record — every `Add` with a
+    /// The journal is the deterministic input record - every `Add` with a
     /// displayed price the engine matched against is a quote observation;
     /// the LAST inbound add's price per side is the shard's own book state
     /// at that point (the engine books the remainder at exactly that
@@ -263,7 +263,7 @@ pub struct TradeIdLease {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LeaseOutcome {
     Id(u64),
-    /// Lease exhausted — the shell must lease the next batch.
+    /// Lease exhausted - the shell must lease the next batch.
     NeedLease,
 }
 
@@ -317,7 +317,7 @@ pub enum ProtectionMode {
 /// protected opposite quote.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ProtectionDecision {
-    /// Price is fine — proceed unchanged.
+    /// Price is fine - proceed unchanged.
     Pass,
     /// Kill the order (protection = Kill).
     Kill,
@@ -377,7 +377,7 @@ mod tests {
 
     #[test]
     fn journal_bbo_returns_the_recent_opposite_best() {
-        // Sequence: ask 10_05 (journal entry 1), bid 10_00 (entry 2) —
+        // Sequence: ask 10_05 (journal entry 1), bid 10_00 (entry 2) -
         // the local ask-side best is 10_05, the bid-side best 10_00.
         let mut j = ShardJournal::new(0, 8);
         j.append(JournalEntry::Add(ask(1, 10_050)));
@@ -477,7 +477,7 @@ mod tests {
         assert!(full.is_some(), "third append fills the ring");
         let decoded = ShardJournal::decode_chunk(&full.unwrap());
         assert_eq!(decoded.len(), 3);
-        // Ring drained — next append starts fresh.
+        // Ring drained - next append starts fresh.
         assert!(j.append(JournalEntry::Add(add(4, 1))).is_none());
         let tail = j.flush_chunk();
         assert_eq!(ShardJournal::decode_chunk(&tail).len(), 1);

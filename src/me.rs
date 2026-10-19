@@ -3,21 +3,21 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:ME
 // SPDX-License-Identifier: Apache-2.0
 
-//! Exchange8:ME runtime wiring — the per-shard task graph + admin data handlers.
+//! Exchange8:ME runtime wiring - the per-shard task graph + admin data handlers.
 //!
 //! Wires the pure cores (`engine`, `journal`, `shard`, `auction`, `events`)
 //! onto the runtime per DESIGN.md §2/§7:
 //!
-//! - **Shard tasks** — one tokio task per shard: owns a `MatchingEngine`,
+//! - **Shard tasks** - one tokio task per shard: owns a `MatchingEngine`,
 //!   the shard journal, the `QuoteSource` (engine-local BBO), and drains
 //!   every match's `MeEvent`s into the egress channel (MemBus fail-soft +
-//!   the outbox writer's batcher). Bounded mpsc in, single consumer —
+//!   the outbox writer's batcher). Bounded mpsc in, single consumer -
 //!   no locks anywhere on the matching path.
-//! - **Outbox writer** — one task batching 1000 events / 5 ms into
+//! - **Outbox writer** - one task batching 1000 events / 5 ms into
 //!   `me.outbox` (DESIGN.md §7 budget); the shell relay (boot 8b) produces.
-//! - **Admin handlers** — the declared RFW data endpoints: the engine book
+//! - **Admin handlers** - the declared RFW data endpoints: the engine book
 //!   snapshot is read in-process from the shard's engine (no DB round-trip
-//!   — books are memory-resident); auction rows are the durable
+//!   - books are memory-resident); auction rows are the durable
 //!   `me.auction` state (RLS-scoped reads). (ME8 stories live in the
 //!   backlog; the normative design text is DESIGN.md §2/§4/§7.)
 //!
@@ -42,7 +42,7 @@ use exchange8::contracts::events::{AddOrder, CancelOrder, MarketStatusMsg, Modif
 use sentin8::shell::err_db;
 
 /// The admin data endpoints' shared state alias: the binary's `MeState`
-/// (shell core + MemBus handle) — the router is bound to `Arc<MeState>`,
+/// (shell core + MemBus handle) - the router is bound to `Arc<MeState>`,
 /// matching the policy-admin handlers' generic form.
 type AppState = crate::MeState;
 
@@ -50,7 +50,7 @@ use crate::events::{Egress, OutEvent};
 use crate::shard::{shard_of, InstrumentRegistry, RegistryHandle, DEFAULT_SHARDS};
 
 // ---------------------------------------------------------------------------
-// Shard plane (single writer per shard — DESIGN.md §7)
+// Shard plane (single writer per shard - DESIGN.md §7)
 // ---------------------------------------------------------------------------
 
 /// One shard's runtime state: the matching engine + journal + quote source
@@ -61,31 +61,31 @@ struct ShardRuntime {
     egress: Egress,
 }
 
-/// The registry the shard plane reads — a handle so metadata refreshes swap
+/// The registry the shard plane reads - a handle so metadata refreshes swap
 /// atomically for all shard tasks.
 type SharedRegistry = Arc<tokio::sync::RwLock<RegistryHandle>>;
 
 /// Build the registry from the contract master rows
-/// (`refdata.security` — lot 100 default where the row carries none).
+/// (`refdata.security` - lot 100 default where the row carries none).
 pub async fn load_registry(pool: &sqlx::PgPool, env_id: Uuid) -> RegistryHandle {
     let mut conn = match pool.acquire().await {
         Ok(c) => c,
         Err(e) => {
-            tracing::warn!(error = %e, "me registry: pool acquire failed — default registry");
+            tracing::warn!(error = %e, "me registry: pool acquire failed - default registry");
             return RegistryHandle::from_sod(InstrumentRegistry::from_rows(Vec::new()));
         }
     };
     let mut ctx = match conn.begin().await {
         Ok(c) => c,
         Err(e) => {
-            tracing::warn!(error = %e, "me registry: tx begin failed — default registry");
+            tracing::warn!(error = %e, "me registry: tx begin failed - default registry");
             return RegistryHandle::from_sod(InstrumentRegistry::from_rows(Vec::new()));
         }
     };
     sentin8::shell::set_tenant_context(&mut ctx, env_id).await;
     let rows = sqlx::query_as::<_, (Uuid, i32, i16)>(
         // Cross-schema read (declared: refdata.security SELECT). `securities.id`
-        // is the UUID key; the engine keys books by a u32 — the low bits of
+        // is the UUID key; the engine keys books by a u32 - the low bits of
         // the UUID map instrument ids deterministically per env (the contract
         // master's identity inside the engine's address space).
         r#"SELECT id, lot_size, price_scale FROM refdata.security WHERE env_id = $1"#,
@@ -110,7 +110,7 @@ pub async fn load_registry(pool: &sqlx::PgPool, env_id: Uuid) -> RegistryHandle 
     RegistryHandle::from_sod(InstrumentRegistry::from_rows(metas))
 }
 
-/// Deterministic u32 projection of the security UUID (identity per env —
+/// Deterministic u32 projection of the security UUID (identity per env -
 /// the engine's instrument id space; stable across restarts).
 pub fn instrument_id_of(security_id: &str) -> u32 {
     let mut h: u32 = 0x9e37_79b9; // FNV-1a-32 over the dash string form
@@ -121,7 +121,7 @@ pub fn instrument_id_of(security_id: &str) -> u32 {
     h
 }
 
-/// Resolve the tenant env id the shard plane attributes to — the same
+/// Resolve the tenant env id the shard plane attributes to - the same
 /// chain MemBus uses (`{SERVICE_SLUG}_ENV_ID` → `SENTIN8_ENV_ID` → system
 /// env) so the events and the MemBus publishes share one tenant identity
 /// (`sentin8::membus::ServiceBus::resolve_env_id` semantics).
@@ -133,16 +133,16 @@ pub fn resolve_env_id(service_name: &str) -> Uuid {
     Uuid::parse_str(&raw).unwrap_or(sentin8::config::SYSTEM_ENV_ID)
 }
 
-/// Spawn the shard plane + egress (called from the `with_state` closure —
+/// Spawn the shard plane + egress (called from the `with_state` closure -
 /// boot step 8; the shell's relay/pushers are already running).
 pub async fn spawn_shard_plane(state: Arc<AppState>, env_id: Uuid) -> SharedRegistry {
     let registry: SharedRegistry = Arc::new(tokio::sync::RwLock::new(
-        // Boot load (§4.2 hydration constraint) — the pool task fills it
+        // Boot load (§4.2 hydration constraint) - the pool task fills it
         // right after spawn; shards read the default until ready.
         RegistryHandle::from_sod(InstrumentRegistry::from_rows(Vec::new())),
     ));
 
-    // Registry load + refresh task (SOD + event-driven swap) — awaited
+    // Registry load + refresh task (SOD + event-driven swap) - awaited
     // inline so the first shard batch reads hydrated metadata (§4.2:
     // never lazily at first order).
     {
@@ -160,7 +160,7 @@ pub async fn spawn_shard_plane(state: Arc<AppState>, env_id: Uuid) -> SharedRegi
     // The (tx, rx) pairs for every shard's ingest queue.
     for s in 0..DEFAULT_SHARDS {
         let eng = crate::engine::MatchingEngine::new();
-        // Trade ids continue from the platform lease frontier — the shell
+        // Trade ids continue from the platform lease frontier - the shell
         // refills (journal replay resumes deterministically from the lease);
         // `MatchingEngine::new` starts at 1, the shard task seeds the real
         // frontier below via the registry-load completion.
@@ -225,7 +225,7 @@ pub async fn ingest_add(_state: &AppState, env_id: Uuid, msg: &AddOrder) {
     let Some(run) = shards.get(&s) else { return };
     let mut rt = run.lock().await;
     // Every accepted inbound is journaled BEFORE its effects are observable
-    // (DESIGN.md §8 invariant 2) — ring append, chunk flush rides the
+    // (DESIGN.md §8 invariant 2) - ring append, chunk flush rides the
     // journal-writer pass.
     let _ = rt
         .journal
@@ -280,7 +280,7 @@ pub async fn ingest_modify(_state: &AppState, env_id: Uuid, msg: &ModifyOrder) {
     tag = "exchange8-admin",
 )]
 
-/// `GET /v1/admin/ui/engine` — the RFW page definition (Dash renders it).
+/// `GET /v1/admin/ui/engine` - the RFW page definition (Dash renders it).
 /// Gate: the page's declared scope (the `exchange8:order:read` admin
 /// vocabulary; the step-5 mirror admits the platform-admin trio).
 pub async fn admin_ui_engine_page(
@@ -301,7 +301,7 @@ pub async fn admin_ui_engine_page(
     security(),
     tag = "exchange8-admin",
 )]
-/// `GET /v1/admin/ui/auctions` — the auctions RFW page definition.
+/// `GET /v1/admin/ui/auctions` - the auctions RFW page definition.
 pub async fn admin_ui_auctions_page(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
@@ -310,7 +310,7 @@ pub async fn admin_ui_auctions_page(
 }
 
 /// Shared page handler: resolve the declared page, gate its scope, render
-/// the RFW JSON (refdata/gateway pattern — 404 for undeclared slugs).
+/// the RFW JSON (refdata/gateway pattern - 404 for undeclared slugs).
 async fn admin_ui_page(
     state: &AppState,
     headers: &axum::http::HeaderMap,
@@ -354,7 +354,7 @@ pub struct EngineInstrumentRow {
     pub best_ask: Option<i128>,
 }
 
-/// `POST /v1/admin/engine` — the engine snapshot (RFW table data).
+/// `POST /v1/admin/engine` - the engine snapshot (RFW table data).
 ///
 /// Read-only: the engine state is read in-process under the shard locks
 /// (books are memory-resident; the RLS pipeline applies because the reader
@@ -382,7 +382,7 @@ pub async fn engine_snapshot(
     for run in shards.values() {
         let rt = run.lock().await;
         // One row per instrument across the shard's books. The engine's
-        // books are private — the state surface (all_order_states) +
+        // books are private - the state surface (all_order_states) +
         // per-instrument rows project from the public API.
         let mut seen: HashMap<u32, EngineInstrumentRow> = HashMap::new();
         for st in rt.engine.all_order_states() {
@@ -432,7 +432,7 @@ pub struct AuctionRow {
     tag = "exchange8-admin",
 )]
 
-/// `POST /v1/admin/auctions` — the durable auction sessions (RFW table
+/// `POST /v1/admin/auctions` - the durable auction sessions (RFW table
 /// data; RLS-scoped read of `me.auction`).
 pub async fn auctions_snapshot(
     State(state): State<Arc<AppState>>,
@@ -469,7 +469,7 @@ pub async fn auctions_snapshot(
 }
 
 /// One auction session the shard task operates (engine + durable identity).
-/// The snapshot struct (engine + identity + orders) is rebuilt per uncross —
+/// The snapshot struct (engine + identity + orders) is rebuilt per uncross -
 /// no Clone/Debug derive needed (the `AuctionEngine` is owned in place).
 pub struct AuctionRuntime {
     /// The durable row identity (DESIGN.md §3 binding).
@@ -480,7 +480,7 @@ pub struct AuctionRuntime {
     pub orders: Vec<(u64, bool, Option<i128>, i128)>,
 }
 
-/// Publish one indicative (MemBus `me.auction`, fail-soft) — the call
+/// Publish one indicative (MemBus `me.auction`, fail-soft) - the call
 /// period's imbalance publication (auctions design §3).
 pub fn indicative_event(session: &AuctionRuntime) -> serde_json::Value {
     let ind = session.engine.indicative();
@@ -520,7 +520,7 @@ pub async fn uncross_session(
     Some(u)
 }
 
-/// Market-status fan-out hook (shard 0 semantics — MeInbound::MarketStatus).
+/// Market-status fan-out hook (shard 0 semantics - MeInbound::MarketStatus).
 pub fn market_status_msg(
     book_id: u16,
     status: exchange8::contracts::MarketStatus,

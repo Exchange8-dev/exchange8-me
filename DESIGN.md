@@ -1,4 +1,4 @@
-# Exchange8:ME — Detailed Design Document
+# Exchange8:ME - Detailed Design Document
 
 ## 1. Scope & Context
 
@@ -7,15 +7,15 @@ CLOB books inside one environment: the memory-resident books, the input
 journal, the trade-id lease consumption, the auction state machines, and the
 outbound lifecycle/trade event stream. It explicitly does **not** own:
 
-- client protocols (FIX / SOUP / ITCH) — Exchange8:Gateway terminates those and
+- client protocols (FIX / SOUP / ITCH) - Exchange8:Gateway terminates those and
   forwards;
-- pre-trade risk authorization — Exchange8:Risk gates before traffic reaches ME;
-- market-data book assembly / feed distribution — Exchange8:MD consumes ME events;
-- trade persistence and clearing — Exchange8:Clearing consumes events; ME owns
+- pre-trade risk authorization - Exchange8:Risk gates before traffic reaches ME;
+- market-data book assembly / feed distribution - Exchange8:MD consumes ME events;
+- trade persistence and clearing - Exchange8:Clearing consumes events; ME owns
   in-flight lifecycle only;
-- market session/calendar persistence, contract master, instruments —
+- market session/calendar persistence, contract master, instruments -
   Exchange8:RefData (ME pre-loads its metadata via the registry);
-- event durability fan-out, audit delivery — platform planes (Sentin8:Bus,
+- event durability fan-out, audit delivery - platform planes (Sentin8:Bus,
   Sentin8:Sys) via the local outbox and journal tables below.
 
 ### System context
@@ -52,13 +52,13 @@ graph TD
 graph TD
     subgraph MEProc["exchange8-me binary (axum over sentin8::shell)"]
         HTTP["HTTP/TLS surface: /v1/health + /v1/admin/policy-sets · /v1/admin/relations · /v1/admin/attributes (Shield admin API)"]
-        REG_M["registration.rs — self-description (roles, scopes, error codes, admin UI, SQL, M2M grants)"]
+        REG_M["registration.rs - self-description (roles, scopes, error codes, admin UI, SQL, M2M grants)"]
         STATE["MeState (ServiceCore + MemBus ServiceBus)"]
         subgraph Core["Deterministic engine core (no tokio/DB/clock)"]
-            ENGINE["engine.rs — MatchingEngine + InstrumentBook"]
-            SHARD["shard.rs — dispatcher + InstrumentRegistry"]
-            JRN["journal.rs — ShardJournal + TradeIdLease + protection decisions"]
-            AUCT["auction.rs — AuctionEngine (call/indicative/uncross)"]
+            ENGINE["engine.rs - MatchingEngine + InstrumentBook"]
+            SHARD["shard.rs - dispatcher + InstrumentRegistry"]
+            JRN["journal.rs - ShardJournal + TradeIdLease + protection decisions"]
+            AUCT["auction.rs - AuctionEngine (call/indicative/uncross)"]
         end
         PERSIST["Sentin8 persistence helpers (pool, sentin8_set_tenant_context, outbox+audit SQL)"]
     end
@@ -67,8 +67,8 @@ graph TD
         POLICY["Sentin8:Policy (Shield engine + sentin8_policy_sets)"]
         BUS2["Sentin8:Bus"]
         SYS2["Sentin8:Sys"]
-        TLS2["sentin8-tls — exchange8-me-tls resolver (GET /v1/resolve/hostname, sentin8:sys:instances:read)"]
-        DBP[("PostgreSQL 18 — db exchange8, schema me (OAuth 18 role exchange8_me_service)")]
+        TLS2["sentin8-tls - exchange8-me-tls resolver (GET /v1/resolve/hostname, sentin8:sys:instances:read)"]
+        DBP[("PostgreSQL 18 - db exchange8, schema me (OAuth 18 role exchange8_me_service)")]
     end
     HTTP --> STATE
     STATE --> ENGINE
@@ -89,16 +89,16 @@ graph TD
 
 The binary boots via `sentin8::shell::serve`:
 
-1. `Sentin8Shell::new("exchange8:me", "EXCHANGE8_ME")` — registration, DB pool
+1. `Sentin8Shell::new("exchange8:me", "EXCHANGE8_ME")` - registration, DB pool
    graceful drain on `make upgrade-instance`.
-2. `with_state` builds `MeState { core, membus }` — `ServiceBus::connect`
+2. `with_state` builds `MeState { core, membus }` - `ServiceBus::connect`
    attaches the MemBus publish handle; an empty `valkey_url` or unreachable
    Valkey disables publishing with a WARN (fail-soft, the exchange still boots).
 3. `with_router(extend_router)` mounts `/v1/health` (shell), the shared
    Shield policy-admin API (`/v1/admin/policy-sets*`, `/v1/admin/relations*`,
    `/v1/admin/attributes*`), and the declared RFW admin pages
    (`GET /v1/admin/ui/engine` + `POST /v1/admin/engine`,
-   `GET /v1/admin/ui/auctions` + `POST /v1/admin/auctions`) — the RFW
+   `GET /v1/admin/ui/auctions` + `POST /v1/admin/auctions`) - the RFW
    definitions are pure data (`admin_pages.rs`), the data endpoints read
    engine state through the in-process snapshot.
 4. `registration::print` serves `--print-registration`: the `scope-mirror`
@@ -107,13 +107,13 @@ The binary boots via `sentin8::shell::serve`:
    PostgreSQL role (RLS-granted, no BYPASSRLS, cross-schema grant only to
    `refdata.security SELECT`), error codes, RFW admin pages, M2M grant
    workloads, and the `init` SQL for the `me` schema.
-5. State-closure workers — the boot spawns the egress stack around the shard
+5. State-closure workers - the boot spawns the egress stack around the shard
    plane: the per-shard `ShardJournal`s push chunks to the journal writer
    task (Sentin8:Storage objects), the engine's `MeEvent` drain feeds one
    outbox-writer task (batched INSERTs on `me.outbox`), and the quote
    snapshot (`QuoteSource`, engine-local BBO) feeds price protection. The
    shell's own relay (boot 8b) and audit pusher (8c) drain the outbox and
-   journal tables — ME never re-implements them.
+   journal tables - ME never re-implements them.
 
 ### Component diagram
 
@@ -139,7 +139,7 @@ graph TD
     subgraph Out["Egress plane (shell-boot 8 state closure)"]
         MB2["MemBus publish (me.exec, fail-soft)"]
         EVT["EventChannel (bounded mpsc) → outbox-writer task"]
-        OB["me.outbox batched INSERTs (1000 events / 5 ms) — relay → Bus"]
+        OB["me.outbox batched INSERTs (1000 events / 5 ms) - relay → Bus"]
         JWS["journal-writer task → Sentin8:Storage chunks (batched)"]
         AJ["me.audit_journal + pusher → Sys"]
     end
@@ -159,7 +159,7 @@ graph TD
     ADMIN2 --> EV2
 ```
 
-### Request lifecycle — order ingest → match → journal → outbox
+### Request lifecycle - order ingest → match → journal → outbox
 
 ```mermaid
 sequenceDiagram
@@ -182,14 +182,14 @@ sequenceDiagram
     alt Valkey reachable
         OUT->>OUT: MemBus publish me.exec (newest-wins)
     else Valkey unreachable
-        OUT->>OUT: WARN, skip publish (fail-soft) — outbox path still delivers
+        OUT->>OUT: WARN, skip publish (fail-soft) - outbox path still delivers
     end
-    OUT->>OUT: INSERT me.outbox (payload, relayed=false) — pg_notify me_outbox_changed
+    OUT->>OUT: INSERT me.outbox (payload, relayed=false) - pg_notify me_outbox_changed
     OUT->>OUT: relay reads unrelayed rows → Bus POST /v1/produce (idempotency_key = row id)
     Note over GW,OUT: relay failure: row stays unrelayed, relay_attempts++ , replayable
 ```
 
-### Request lifecycle — auction call / indicative / uncross
+### Request lifecycle - auction call / indicative / uncross
 
 ```mermaid
 sequenceDiagram
@@ -200,17 +200,17 @@ sequenceDiagram
     ADM->>AE: open_call (PreOpen, auction_type ∈ opening/closing/volatility/ipo/reopen/halt)
     loop during call
         ADM->>AE: add AuctionOrder (limit or market) / cancel by order_id
-        ADM->>AE: indicative() — price, matched_qty, imbalance
+        ADM->>AE: indicative() - price, matched_qty, imbalance
         AE-->>OUT: indicative publication (exchange8:md:auction:imbalance consumers)
     end
-    ADM->>AE: uncross() — state → Uncrossing
+    ADM->>AE: uncross() - state → Uncrossing
     AE->>AE: candidates = buy limits, sell limits, reference price, take max matched (tie: min |imbalance|, then closest to reference)
-    AE-->>OUT: Uncross { price, matched_qty, imbalance } — persisted to me.auction (uncross_price)
-    AE->>AE: finish() — clear orders, state → Open
+    AE-->>OUT: Uncross { price, matched_qty, imbalance } - persisted to me.auction (uncross_price)
+    AE->>AE: finish() - clear orders, state → Open
     Note over AE: empty book → uncross returns None (no clear price)
 ```
 
-### Request lifecycle — admin / policy surface (RFW pass)
+### Request lifecycle - admin / policy surface (RFW pass)
 
 ```mermaid
 sequenceDiagram
@@ -227,7 +227,7 @@ sequenceDiagram
     else no matching permit (forbid beats permit)
         ME-->>BFF: 403 (fail-closed, shadow mode logs would-deny instead)
     end
-    Note over ME: engine / auctions admin pages mounted (§4) — definitions +
+    Note over ME: engine / auctions admin pages mounted (§4) - definitions +
     Note over UI,SHIELD: data endpoints read engine state in-process
 ```
 
@@ -239,7 +239,7 @@ schema-per-service); role `exchange8_me_service` holds exactly the grants in
 SELECT`). RLS is FORCEd on every table with
 `sentin8_context_initialized() AND env_id = sentin8_current_env_id()`
 policies; context is set per connection via
-`SELECT sentin8_set_tenant_context($1)` — always `await`ed, transaction-local.
+`SELECT sentin8_set_tenant_context($1)` - always `await`ed, transaction-local.
 
 ```mermaid
 erDiagram
@@ -299,27 +299,27 @@ erDiagram
 
 Per-table notes:
 
-- `me.auction` — one row per (book, auction_type, scheduled session);
+- `me.auction` - one row per (book, auction_type, scheduled session);
   `state` is the durable auction lifecycle CHECK-enforced to
   `scheduled|accepting|locked|uncrossing|complete|cancelled`; `uncross_price`
   is written at uncross; indexed on `env_id`. Visibility tier: env (RLS on
   `env_id`), no org column.
-- `me.auction_order` — participating orders as of the uncross snapshot
+- `me.auction_order` - participating orders as of the uncross snapshot
   (`order_id`, side, price, qty, `filled_qty`); FK to `me.auction`; env-scoped
-  RLS; no audit of fills beyond the journal — Clearing persists trades.
-- `me.outbox` — the local outbox (platform `sentin8_outbox` shape): rows are
+  RLS; no audit of fills beyond the journal - Clearing persists trades.
+- `me.outbox` - the local outbox (platform `sentin8_outbox` shape): rows are
   inserted in the same transaction as any domain change (`event_type`,
   `stream_family`, `payload`), flagged `relayed` by the shell relay
   (`relayed_at`, `relay_attempts`), partial index on unrelayed rows, and the
   `me_outbox_changed` trigger firing `pg_notify` for the relay wake-up.
-- `me.audit_journal` — the local audit journal (platform `sentin8_audit`
+- `me.audit_journal` - the local audit journal (platform `sentin8_audit`
   shape): admin/lifecycle actions with before/after states, pushed to
   Sentin8:Sys; `pushed`/`pushed_at` track delivery; partial index on unpushed.
 - The matched books, prices, quantities and orders themselves are **not**
-  persisted — they live in memory per shard; the input journal (Sentin8:Storage
+  persisted - they live in memory per shard; the input journal (Sentin8:Storage
   objects) plus deterministic replay is the reconstruction path, and trade
   persistence belongs to Exchange8:Clearing as the event sink. Trade/order ids come
-  from platform-managed sequence leases (`exchange8::wire::SequenceLease` —
+  from platform-managed sequence leases (`exchange8::wire::SequenceLease` -
   batches of 10 000, refill `UPDATE…RETURNING`); this vertical declares no
   sequence table.
 
@@ -349,7 +349,7 @@ stateDiagram-v2
     [*] --> Closed: no auction scheduled
     Closed --> PreOpen: open_call (call period, orders accumulate)
     PreOpen --> Uncrossing: uncross() (call ends)
-    Uncrossing --> Open: finish() — clear price published, orders cleared
+    Uncrossing --> Open: finish() - clear price published, orders cleared
     Open --> PreClose: (auction_type=closing) close call starts
     PreOpen --> Closed: cancel (me.auction.state = cancelled)
     PreClose --> Uncrossing: uncross()
@@ -359,16 +359,16 @@ stateDiagram-v2
 Note: the in-memory engine distinguishes `Closed → PreOpen → Uncrossing →
 Open`; the durable `me.auction.state` row carries the scheduling stages
 (`scheduled` → `accepting` when the call opens → `locked` at call end →
-`uncrossing` while the clearing price computes → `complete` at publish —
+`uncrossing` while the clearing price computes → `complete` at publish -
 `cancelled` when an operator withdraws the session). The shard's auction
 task advances the row in the SAME transaction as the outbox event
-(`exchange8:me:auction:uncrossed`) and the audit journal rows — the
+(`exchange8:me:auction:uncrossed`) and the audit journal rows - the
 durable and in-memory state machines cannot diverge at an uncross.
 
 ## 4. API Surface
 
 Order flow uses direct framed streams (`exchange8::me::client` envelopes over
-`exchange8::wire`), not HTTP payloads — ME has **no inbound HTTP data surface
+`exchange8::wire`), not HTTP payloads - ME has **no inbound HTTP data surface
 of its own**; the router mounts health and the Shield admin API only.
 
 | Audience | Surface | Gate | Notes |
@@ -382,7 +382,7 @@ of its own**; the router mounts health and the Shield admin API only.
 | Out | Sys `POST /v1/audit` | M2M `sentin8:sys:audit:write` | workload `me-audit` |
 | TLS | `GET /v1/resolve/hostname` (Sys owner API) | M2M `sentin8:sys:instances:read` | workload `exchange8-me-tls` (database-free resolve) |
 
-Emitted events — vocabulary `exchange8:{service}:{resource}:{operation}`, the
+Emitted events - vocabulary `exchange8:{service}:{resource}:{operation}`, the
 `MeEvent` → `event_type` mapping the outbox writer owns (constants in
 `events.rs`, asserted by the vocabulary tests):
 
@@ -397,7 +397,7 @@ Emitted events — vocabulary `exchange8:{service}:{resource}:{operation}`, the
 | auction uncross | `exchange8:me:auction:uncrossed` | `me.auction` | `me.auction` |
 
 Payload = the `Envelope<T>` shape (`event_type`, `env_id`, per-shard `seq`,
-`idempotency_key = "me-{shard}-{seq}"`, typed payload) — payload-complete
+`idempotency_key = "me-{shard}-{seq}"`, typed payload) - payload-complete
 (event-first rule: Clearing/MD react from the payload alone). The MemBus
 drain publishes the same envelope to the `me.exec` stream class fail-soft;
 the outbox path delivers durably. Inbound events this service consumes:
@@ -436,7 +436,7 @@ flowchart TD
     A["Domain change / MeEvent drain"] --> B["INSERT me.outbox (payload, relayed=false) + pg_notify me_outbox_changed"]
     B --> C["Shell relay wakes (LISTEN)"]
     C --> D["Read unrelayed rows (partial index)"]
-    D --> E["POST /v1/produce — M2M sentin8:bus:produce, idempotency_key = outbox id"]
+    D --> E["POST /v1/produce - M2M sentin8:bus:produce, idempotency_key = outbox id"]
     E -->|2xx| F["UPDATE relayed=true, relayed_at"]
     E -->|network/5xx| G["relay_attempts++; leave unrelayed; backoff retry"]
     G --> B
@@ -473,7 +473,7 @@ flowchart TD
   identical state (trade ids resume from the lease refill at replay start).
 - **Rate limiting / backpressure.** The ME relies on upstream risk and
   connection limits (Exchange8:Gateway / Exchange8:Risk own admission); internally every
-  inbound queue is a bounded mpsc — overflow is backpressure to the upstream
+  inbound queue is a bounded mpsc - overflow is backpressure to the upstream
   stream, alerted at the queue watermark, never an unbounded buffer.
 - **Audit journaling.** Admin-domain changes ride
   `me.audit_journal` (same transaction as the change where applicable) with
@@ -484,12 +484,12 @@ flowchart TD
 - **Drain.** `sentin8::shell` graceful drain integrates with
   `make upgrade-instance`: the new instance reaches `Active` in the registry,
   the old drains in-flight shard work and writes outstanding journal/outbox
-  rows before exit — no stale Valkey captain entries, no dropped matches on
+  rows before exit - no stale Valkey captain entries, no dropped matches on
   rolling swap.
 - **TLS posture.** In-process TLS via the `sentin8-tls` library
   (post-quantum X25519MLKEM768 / ML-DSA-65); the DB-free resolver workload
   `exchange8-me-tls` resolves hostnames through the Sys owner API
-  (`GET /v1/resolve/hostname`, scope `sentin8:sys:instances:read`) — ME holds
+  (`GET /v1/resolve/hostname`, scope `sentin8:sys:instances:read`) - ME holds
   no platform-database DSN for resolution and no vertical carries
   BYPASSRLS anywhere in its grant set.
 
@@ -528,14 +528,14 @@ flowchart TD
   recoverable truth; matching pauses rather than accepting effects that
   could not be replayed.
 - **Sequence lease failure.** Fail-stop for new trade ids (no fill can be
-  assigned); resting orders and cancels continue — id issuance is the only
+  assigned); resting orders and cancels continue - id issuance is the only
   blocked surface.
 - **Relay / Bus outage.** `me.outbox` rows accumulate unrelayed
   (`relay_attempts` grows); partial-index reads replay in `created_at`
   order when Valkey recovers; idempotency keys make replay safe; the MemBus
   realtime path degrades to WARN publish-skip without failing the exchange.
 - **Sys audit outage.** `me.audit_journal` rows stay unpushed; the pusher
-  retries — audit is never lost, only delayed.
+  retries - audit is never lost, only delayed.
 - **Auction session persistence failure.** `me.auction` writes are the
   durable record of sessions; if the DB write fails the session is not
   uncrossed (the uncross transaction owns the row update), keeping the
@@ -598,7 +598,7 @@ graph LR
 - **Task layout.** One tokio task per shard (64 default, `DEFAULT_SHARDS`), one
   reader task per upstream stream, THREE egress tasks (MemBus fail-soft
   publisher, outbox writer, journal writer) plus the shell's own relay/pusher
-  (boot 8b/8c) — every channel between them is bounded; `try_send` backpressure
+  (boot 8b/8c) - every channel between them is bounded; `try_send` backpressure
   is the only queueing control.
 - **Outbox writer budget.** The `EventChannel` drain batches 1000 events or a
   5 ms tick, whichever first (design §4 writer budget): one INSERT batch on
@@ -608,7 +608,7 @@ graph LR
   shard's task: no atomics, no mutex, no lock ordering to reason about;
   cross-instrument market status routes to the fan-out shard (0) by design.
 - **Registry swap.** `RegistryHandle::refresh` (copy → mutate → swap) keeps
-  readers on immutable snapshots — a shard's batch reads one consistent
+  readers on immutable snapshots - a shard's batch reads one consistent
   metadata view even mid-update; unknown instruments resolve to the
   documented default (lot 100, FIFO) for pre-registry journal replay only.
 - **Hot path.** AddOrder = metadata snapshot lookup + ordered-level best-first
@@ -639,7 +639,7 @@ Always-true conditions:
 6. No tenant-table read/write without a set tenant context on that
    connection; RLS FORCEd everywhere; role `exchange8_me_service` holds no
    BYPASSRLS and no cross-database grants.
-7. Trade ids come only from the in-process lease with monotonic refill —
+7. Trade ids come only from the in-process lease with monotonic refill -
    no sequence table bypass, no id reuse within an env (lease refills resume
    from the platform store's frontier).
 8. The engine never rejects by policy decision not made by Shield: the
@@ -663,11 +663,11 @@ are enforced by the type system rather than by unchecked code.
 
 ```mermaid
 graph TD
-    U["Unit tests (in-crate, pure engine) — services/me/src/*.rs #[cfg(test)]"]
-    P["Policy wiring tests — tests/policy.rs (pure, no DB)"]
-    S["SQL integration (RLS matrix) — tests/sql_matrix.rs (live DB, probe role)"]
-    G["Workspace suites — shell wiring, vertical enroll, golden wire/event parity"]
-    E2EUI["E2E UI — platform tests (out of this unit)"]
+    U["Unit tests (in-crate, pure engine) - services/me/src/*.rs #[cfg(test)]"]
+    P["Policy wiring tests - tests/policy.rs (pure, no DB)"]
+    S["SQL integration (RLS matrix) - tests/sql_matrix.rs (live DB, probe role)"]
+    G["Workspace suites - shell wiring, vertical enroll, golden wire/event parity"]
+    E2EUI["E2E UI - platform tests (out of this unit)"]
     U --> S
     P --> S
     G --> E2EUI
@@ -688,7 +688,7 @@ graph TD
   refresh, market-status fan-out; auction state machine, max-volume
   uncross, tie-breaks, zero-imbalance clearing, indicative math.
 - **Policy wiring tests** (`tests/policy.rs`, no DB): the *actual* seeded
-  scope-mirror text drives the engine cache — no-set deny, enforced
+  scope-mirror text drives the engine cache - no-set deny, enforced
   no-match deny, shadow never blocks (would-deny reported), mirror permits
   its own grants, M2M parity, platform-admin scopes pass, forbid-beats-
   permit, role-keyed tenant sets participate.
@@ -696,25 +696,25 @@ graph TD
   the `exchange8_probe` NOBYPASSRLS role): every table declared in
   `init.sql` exists with FORCE RLS + policies; zero rows without context;
   insert rejected by WITH CHECK; own-env sees exactly its probe row;
-  cross-env zero rows — all inside one rolled-back transaction (zero
+  cross-env zero rows - all inside one rolled-back transaction (zero
   residue, hermetic offline skip).
 - **Deliberately not tested here:** platform token verification internals,
-  RFW rendering, Bus/Sys wire formats, and Flutter surfaces — owned by the
+  RFW rendering, Bus/Sys wire formats, and Flutter surfaces - owned by the
   platform's own suites (covered in the platform testing strategy doc); the
   E2E UI pyramid lives at platform level.
 
 ## 10. Open Questions
 
 - The concrete outbound `event_type` vocabulary shipped with the outbox
-  writer (`events.rs` — the `MeEvent` mapping table in §4; the per-side
+  writer (`events.rs` - the `MeEvent` mapping table in §4; the per-side
   `Executed` carries the common `trade_id`; the `Filled` roll-up stays a
   Clearing-consumed projection, not a second ME event).
 - Cross-service L1 quote source (Exchange8:MD consolidated EBBO feeding
-  `QuoteSource` over the bus) is a separate epic — the in-process seam is
+  `QuoteSource` over the bus) is a separate epic - the in-process seam is
   live: `QuoteSource` polls the shard's own journal-fed BBO snapshot and
   the MD feed swaps in behind the same trait.
 - The e2e UI pyramid (eExchange shell + app instances) is a platform-level
-  epic (A1) — the BFF proxy path does not yet serve an eExchange listing.
+  epic (A1) - the BFF proxy path does not yet serve an eExchange listing.
 
 ---
 

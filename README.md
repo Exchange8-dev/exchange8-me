@@ -3,15 +3,15 @@
 ## 1. Summary
 
 Exchange8:ME (Matching Engine) is the deterministic central-limit-order-book (CLOB)
-matching core of the exchange8 vertical — the capital-markets matching tier of
+matching core of the exchange8 vertical - the capital-markets matching tier of
 the Sentin8 platform. It accepts order-entry events from Exchange8:Gateway, Exchange8:OMS,
 and Exchange8:SOR re-posts, executes them against per-instrument order books in
 memory, and emits the complete order-lifecycle and trade event stream
 (bookings, executions, kills, modifications, rejections, reprices). The engine
-preserves canonical matching semantics — price-time priority, per-contract
+preserves canonical matching semantics - price-time priority, per-contract
 allocation policies (FIFO / pro-rata), broker preferencing, board/odd-lot
 separation, iceberg reload with time-priority reset, post-only, price
-protection, self-trade prevention, halts, and quotation-only state — and adds
+protection, self-trade prevention, halts, and quotation-only state - and adds
 call auctions (opening / closing / volatility / IPO / reopen / halt) with
 indicative-imbalance publication and maximum-volume uncrossing.
 
@@ -40,7 +40,7 @@ relayed to Sentin8:Bus, and an `me.audit_journal` pushed to Sentin8:Sys.
   matching domain.
 - **Deterministic recovery.** Every inbound message is journaled per shard
   (bounded ring → length-prefixed binary chunks); recovery rebuilds books by
-  replaying the journal with the same engine — identical input, identical
+  replaying the journal with the same engine - identical input, identical
   state.
 - **Auction-grade market quality.** Opens, closes, and volatility events
   clear through a single call-auction price that maximizes matched volume,
@@ -67,13 +67,13 @@ graph TD
     subgraph ME["Exchange8:ME process (exchange8-me)"]
         STREAMS["Direct-stream readers (exchange8::me::client envelopes over exchange8::wire)"]
         DEDUP["Session supervisor: cancel-on-disconnect, sequence leases, order-state recovery"]
-        REG["InstrumentRegistry (lot size, allocation) — ArcSwap snapshot"]
+        REG["InstrumentRegistry (lot size, allocation) - ArcSwap snapshot"]
         DISP["Shard dispatcher: instrument_id % 64"]
         SHARDS["Per-shard matching engines (single writer per instrument book)"]
         JOURNAL["ShardJournal rings (bounded, length-prefixed chunks)"]
         EVENTS["MeEvent stream: Booked / Executed / Killed / Modified / Rejected / Repriced"]
         AUCTION["AuctionEngine per instrument: call → indicative → uncross"]
-        MEMBUS["MemBus ServiceBus — stream class me.exec (fail-soft)"]
+        MEMBUS["MemBus ServiceBus - stream class me.exec (fail-soft)"]
         DB["me.outbox + me.audit_journal + me.auction (schema me, db exchange8)"]
         ADMIN["Shield policy-admin API + /v1/health (axum)"]
     end
@@ -107,47 +107,47 @@ graph TD
 
 The shell (`main.rs`) boots registration, the DB pool (`EXCHANGE8_ME_DATABASE_URL`),
 the MemBus handle, and the router (`/v1/health` + Shield policy-admin). The
-deterministic engine modules — `engine.rs` (books + matching), `shard.rs`
+deterministic engine modules - `engine.rs` (books + matching), `shard.rs`
 (dispatcher + registry), `journal.rs` (journal, trade-id lease, price
-protection decisions), `auction.rs` (call auctions) — are free of tokio, DB,
+protection decisions), `auction.rs` (call auctions) - are free of tokio, DB,
 and clock dependencies, which is what makes replay and unit testing exact.
 
 ## 4. Key Traits and Data Structures
 
-- **MatchingEngine** — the pure matching core: a map of instrument books plus
+- **MatchingEngine** - the pure matching core: a map of instrument books plus
   a trade-id source and an ordered event sink. Every inbound operation
   (add / cancel / modify / erase / instrument status / market status) is a
   method call that mutates books and appends lifecycle events; nothing else
   is observable about the core's internals.
-- **InstrumentBook** — one book pair per instrument: a *board* book (whole
+- **InstrumentBook** - one book pair per instrument: a *board* book (whole
   lots) and an *odd* book (odd-lot tail volume), each with market/bid and
   market/ask sides, the instrument status (Open / Halted / QuotationOnly),
   lot size, and the contract's within-level fill discipline (`fifo` or a
   pro-rata variant). Mixed quantities split into a board portion and an odd
   portion that never match each other across books.
-- **Book / PriceLevel / RestingOrder** (`crates/book`) — the ordered level
+- **Book / PriceLevel / RestingOrder** (`crates/book`) - the ordered level
   map: best-first iteration for the match walk, O(1) locate/cancel/reduce by
   order id, FIFO front-filling; visible and hidden (iceberg) volume live on
   distinct levels so bypass orders only touch visible liquidity.
-- **MeEvent** — the outbound lifecycle set: `Booked`, `Killed`, `Modified`,
+- **MeEvent** - the outbound lifecycle set: `Booked`, `Killed`, `Modified`,
   `Filled`, `Rejected`, `Executed`, `Repriced`. Executions carry a common
   trade id, the passive-side price, liquidity flags (active = removed,
   passive = added), and counterparty identity; both sides of every fill are
   emitted as separate events.
-- **InstrumentRegistry / RegistryHandle** (`shard.rs`) — the immutable
+- **InstrumentRegistry / RegistryHandle** (`shard.rs`) - the immutable
   snapshot of per-instrument contract metadata (lot size, allocation
   method), loaded at startup and swapped atomically on refresh; readers get a
   consistent snapshot per clone, never torn state.
-- **ShardJournal** (`journal.rs`) — the per-shard input journal: a bounded
+- **ShardJournal** (`journal.rs`) - the per-shard input journal: a bounded
   ring of journaled messages drained as one length-prefixed binary chunk,
   rotated per session; decode is total (truncated or corrupt chunks read
   short, never panic).
-- **TradeIdLease** (`journal.rs`) / **SequenceLease** (`exchange8::wire`) —
+- **TradeIdLease** (`journal.rs`) / **SequenceLease** (`exchange8::wire`) -
   the in-process 10k-batch lease over the platform-managed sequence; the
-  vertical ships no sequence table of its own — lease blocks are handed out
+  vertical ships no sequence table of its own - lease blocks are handed out
   in memory and refilled from the platform store (UPDATE…RETURNING supplied
   by the shell).
-- **AuctionEngine** (`auction.rs`) — one call-auction session per instrument:
+- **AuctionEngine** (`auction.rs`) - one call-auction session per instrument:
   accumulates orders during the call, publishes indicative price / matched
   volume / imbalance, and uncrosses at the price maximizing matched volume
   (tie-breaks: smallest imbalance, then closest to the reference price).
@@ -158,10 +158,10 @@ and clock dependencies, which is what makes replay and unit testing exact.
   - *Pure core + thin shell.* Matching lives in clock-free, allocation-free
     structs; the shell owns I/O, identity, and persistence. Determinism is
     the property that makes recovery, replay, and audit reconciliation
-    trustworthy — a core that touches tokio or the DB cannot be replayed
+    trustworthy - a core that touches tokio or the DB cannot be replayed
     bit-exactly.
   - *Shard-by-instrument.* `instrument_id % N_SHARDS` gives disjoint single-writer
-    domains with zero coordination — the same shape as classic dispatcher
+    domains with zero coordination - the same shape as classic dispatcher
     pools, expressed as one bounded mpsc per shard. No distributed lock, no
     per-book mutex.
   - *Outbox-first events.* Lifecycle and trade events are emitted in memory
@@ -176,7 +176,7 @@ and clock dependencies, which is what makes replay and unit testing exact.
 - **Concurrency.** Bounded tokio mpsc per shard (backpressure is the failure
   mode, not unbounded queues); the registry is swapped atomically
   (copy → mutate → swap) so hot readers pay one `Arc` clone; the MemBus
-  handle fails soft — an unreachable Valkey degrades publishing to a warning,
+  handle fails soft - an unreachable Valkey degrades publishing to a warning,
   never a startup failure, because the exchange must keep matching.
 - **Rejected alternatives.**
   - *Shared book + global lock*: simplifies cancel-anywhere but serializes
@@ -201,7 +201,7 @@ and clock dependencies, which is what makes replay and unit testing exact.
   else book unchanged; price protection → sidestep one tick from the
   protected opposite best and emit `Repriced`; then match, then book the
   remainder (unless IOC/FOK/Bypass kill it). Order-id-less book creation is
-  safe only because the registry hydrates metadata before traffic — a book
+  safe only because the registry hydrates metadata before traffic - a book
   created from the lazy default would freeze lot 100 / FIFO for the
   instrument's lifetime.
 - **Lot split.** Quantity is split into `qty / lot_size` board units plus the
@@ -215,10 +215,10 @@ and clock dependencies, which is what makes replay and unit testing exact.
   in one decision (largest-remainder residue, arrival-order ties).
 - **Broker preferencing.** Two passes over the opposite side: first levels
   containing orders from the incoming order's own customer (even at worse
-  prices), then the rest — applied per pass before allocation.
+  prices), then the rest - applied per pass before allocation.
 - **Iceberg reload.** When the visible slice of a resting iceberg depletes,
   the reload shows `min(max_floor, remaining)`, bumps the sub-order count,
-  and reinserts the order at the FIFO tail — reload resets time priority.
+  and reinserts the order at the FIFO tail - reload resets time priority.
 - **STP.** Matching `stp_key` pairs apply the active order's action:
   KillActive (active remainder killed), KillPassive (resting removed), KillBoth,
   Decrement (reduce the active need by the would-be fill); FOK orders skip
@@ -227,7 +227,7 @@ and clock dependencies, which is what makes replay and unit testing exact.
   execution price is always the passive price; trade ids come from the
   10k in-process lease (`NeedLease` → shell refill).
 - **Modify reality.** Any modification re-keys the order (`new_order_id`),
-  adjusts remaining/display/floor, and reinserts at the tail — every modify
+  adjusts remaining/display/floor, and reinserts at the tail - every modify
   loses time priority; a modify that reduces remaining to zero kills the
   order (`ModifyRequest`); a full reduction is a kill, not a cancel.
 - **Halt / quotation-only boundaries.** An instrument halt kills every
@@ -236,7 +236,7 @@ and clock dependencies, which is what makes replay and unit testing exact.
   to the fan-out shard for book-wide treatment.
 - **Recovery surface.** `all_order_states()` implements the all-orders state
   request (every resting order's remaining volume); `erase_order` drops an
-  order silently (no notify to the originator) — the Gateway-driven
+  order silently (no notify to the originator) - the Gateway-driven
   reconciliation model (unknown-but-live → erase; qty mismatch → cancel).
 - **Journal framing.** `[n:u32] ([len:u32][bytes])×n`, one type byte +
   deterministic payload per entry; `decode_chunk` is total (garbage reads
@@ -253,7 +253,7 @@ and clock dependencies, which is what makes replay and unit testing exact.
   `MeEvent` drain → outbox-writer batching 1000/5 ms, MemBus fail-soft
   publisher, RFW pages `engine`/`auctions` mounted); the INBOUND direct
   streams (Gateway/OMS/SOR readers over `exchange8::wire`) await the peer
-  services' frame senders — the ingest helpers (`ingest_add` / `ingest_cancel`
+  services' frame senders - the ingest helpers (`ingest_add` / `ingest_cancel`
   / `ingest_modify`) and the shard dispatcher are live, the cross-service
   reader task lands with the gateway stream contract epic.
 - The master design's REST admin endpoints (`/v1/admin/books/{id}` depth

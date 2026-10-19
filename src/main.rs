@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:ME
 // SPDX-License-Identifier: Apache-2.0
 
-//! Exchange8:ME service binary — instrument-sharded deterministic matching engine.
+//! Exchange8:ME service binary - instrument-sharded deterministic matching engine.
 //!
 //! Design: `design/sentin8-exchange8-matching-engine-technical-design.md`;
 //! detailed design: `services/me/DESIGN.md` §2.
@@ -32,7 +32,7 @@ use std::sync::Arc;
 ///
 /// `ServiceBus` encodes the fail-soft policy once for every realtime
 /// adopter: an empty `valkey_url` or an unreachable Valkey disables
-/// publishing (WARN, never a startup failure) — the ME must still boot
+/// publishing (WARN, never a startup failure) - the ME must still boot
 /// (`sentin8/design/sentin8-membus-technical-design.md` §10.1.1).
 pub struct MeState {
     pub core: sentin8::shell::ServiceCore,
@@ -44,7 +44,7 @@ fn extend_router(
     _state: std::sync::Arc<MeState>,
 ) -> axum::Router<std::sync::Arc<MeState>> {
     // Order flow arrives via direct e8-client streams from Gateway/OMS/SOR
-    // (design §4.1) — ME mounts NO inbound order HTTP surface. The router
+    // (design §4.1) - ME mounts NO inbound order HTTP surface. The router
     // carries health (shell), the Shield policy-admin API, and the declared
     // RFW admin pages + data endpoints.
 
@@ -101,7 +101,7 @@ fn extend_router(
                 .delete(sentin8::shield::admin::delete_attribute::<std::sync::Arc<MeState>>),
         )
         // ── Declared RFW admin pages (registration admin_ui: `engine`,
-        // `auctions` — DESIGN.md §4; definitions pure data in
+        // `auctions` - DESIGN.md §4; definitions pure data in
         // admin_pages.rs, data endpoints in me.rs).
         .route(
             "/v1/admin/ui/engine",
@@ -112,7 +112,7 @@ fn extend_router(
             axum::routing::get(me::admin_ui_auctions_page),
         )
         .route(
-            // RFW renderer only supports POST — the data endpoints are
+            // RFW renderer only supports POST - the data endpoints are
             // POST-alias routes per the refdata/gateway pattern.
             "/v1/admin/engine",
             axum::routing::post(me::engine_snapshot),
@@ -138,7 +138,7 @@ async fn main() -> anyhow::Result<()> {
                 // §2 item 5): registry SOD load, one task per shard, the
                 // egress pump (MemBus + outbox writer batching 1000 ev /
                 // 5 ms). The shell's relay (8b) and audit pusher (8c) are
-                // already running — they drain what ME stages.
+                // already running - they drain what ME stages.
                 let state = Arc::new(MeState { core, membus });
                 // The env id follows the same resolve chain MemBus uses
                 // (`EXCHANGE8_ME_ENV_ID` → `SENTIN8_ENV_ID` → system env)
