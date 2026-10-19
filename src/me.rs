@@ -268,11 +268,20 @@ pub async fn ingest_modify(_state: &AppState, env_id: Uuid, msg: &ModifyOrder) {
 // ---------------------------------------------------------------------------
 // Admin RFW page handlers (the declared /v1/admin/ui/{engine,auctions})
 // ---------------------------------------------------------------------------
+/// The RFW page-definition document (transparent renderer-contract JSON;
+/// the local auction/engine page builder emits the renderer contract).
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
+#[serde(transparent)]
+pub struct AdminRfwPage(
+    /// The RFW page-definition document.
+    pub serde_json::Value,
+);
+
 #[utoipa::path(
     get,
     path = "/v1/admin/ui/engine",
     responses(
-        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 200, description = "RFW page definition", body = AdminRfwPage),
         (status = 401, description = "Not authenticated"),
         (status = 403, description = "Forbidden"),
     ),
@@ -286,7 +295,7 @@ pub async fn ingest_modify(_state: &AppState, env_id: Uuid, msg: &ModifyOrder) {
 pub async fn admin_ui_engine_page(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<AdminRfwPage>, (StatusCode, String)> {
     admin_ui_page(&state, &headers, "engine").await
 }
 
@@ -294,7 +303,7 @@ pub async fn admin_ui_engine_page(
     get,
     path = "/v1/admin/ui/auctions",
     responses(
-        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 200, description = "RFW page definition", body = AdminRfwPage),
         (status = 401, description = "Not authenticated"),
         (status = 403, description = "Forbidden"),
     ),
@@ -305,7 +314,7 @@ pub async fn admin_ui_engine_page(
 pub async fn admin_ui_auctions_page(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<AdminRfwPage>, (StatusCode, String)> {
     admin_ui_page(&state, &headers, "auctions").await
 }
 
@@ -315,7 +324,7 @@ async fn admin_ui_page(
     state: &AppState,
     headers: &axum::http::HeaderMap,
     slug: &str,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<AdminRfwPage>, (StatusCode, String)> {
     let a = sentin8::shell::verify_token(&state.core.config, headers).await?;
     let page = crate::admin_pages::me_pages()
         .into_iter()
@@ -332,7 +341,7 @@ async fn admin_ui_page(
     )
     .await
     .map_err(|_| (StatusCode::FORBIDDEN, "policy deny".into()))?;
-    Ok(Json(page.to_rfw()))
+    Ok(Json(AdminRfwPage(page.to_rfw())))
 }
 
 // ---------------------------------------------------------------------------
@@ -340,7 +349,7 @@ async fn admin_ui_page(
 // ---------------------------------------------------------------------------
 
 /// One instrument row of the engine snapshot table.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct EngineInstrumentRow {
     /// Instrument id (the engine's u32 space).
     pub instrument_id: u32,
@@ -360,6 +369,17 @@ pub struct EngineInstrumentRow {
 /// (books are memory-resident; the RLS pipeline applies because the reader
 /// is the caller's own process and the payload is engine state, not tenant
 /// rows). Gate: the declared `exchange8:order:read` admin scope.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/engine",
+    responses(
+        (status = 200, description = "Engine snapshot rows", body = Vec<EngineInstrumentRow>),
+        (status = 401, description = "Not authenticated"),
+        (status = 403, description = "Forbidden"),
+    ),
+    security(),
+    tag = "exchange8-admin",
+)]
 pub async fn engine_snapshot(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
@@ -405,7 +425,7 @@ pub async fn engine_snapshot(
 }
 
 /// One auction row of the sessions table.
-#[derive(Debug, Serialize, sqlx::FromRow)]
+#[derive(Debug, Serialize, sqlx::FromRow, utoipa::ToSchema)]
 pub struct AuctionRow {
     /// Session id.
     pub id: Uuid,
@@ -424,7 +444,7 @@ pub struct AuctionRow {
     post,
     path = "/v1/admin/auctions",
     responses(
-        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 200, description = "Auction snapshot", body = Vec<AuctionRow>),
         (status = 401, description = "Not authenticated"),
         (status = 403, description = "Forbidden"),
     ),
