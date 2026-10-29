@@ -18,8 +18,8 @@
 //! - **Admin handlers** - the declared RFW data endpoints: the engine book
 //!   snapshot is read in-process from the shard's engine (no DB round-trip
 //!   - books are memory-resident); auction rows are the durable
-//!   `me.auction` state (RLS-scoped reads). (ME8 stories live in the
-//!   backlog; the normative design text is DESIGN.md §2/§4/§7.)
+//!   `me.auction` state (RLS-scoped reads). The normative design text
+//!   is DESIGN.md §2/§4/§7.
 //!
 //! The shell's boot spawns the relay and the audit pusher itself (8b/8c);
 //! this module never duplicates them.
@@ -49,9 +49,9 @@ type AppState = crate::MeState;
 use crate::events::{Egress, OutEvent};
 use crate::shard::{shard_of, InstrumentRegistry, RegistryHandle, DEFAULT_SHARDS};
 
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Shard plane (single writer per shard - DESIGN.md §7)
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 /// One shard's runtime state: the matching engine + journal + quote source
 /// handle, all owned by exactly one tokio task (no locks on the hot path).
@@ -213,9 +213,9 @@ async fn egress_pump(membus: sentin8::membus::ServiceBus, tx: tokio::sync::mpsc:
 
 /// The MemBus Valkey URL captured at shell boot (config field, not env).
 
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Inbound ingest (the framed envelope surface)
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 /// Process one inbound AddOrder (journal → dispatch → shard engine).
 pub async fn ingest_add(_state: &AppState, env_id: Uuid, msg: &AddOrder) {
@@ -265,9 +265,9 @@ pub async fn ingest_modify(_state: &AppState, env_id: Uuid, msg: &ModifyOrder) {
     rt.egress.emit_all(&env_id.to_string(), s as u32, events);
 }
 
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Admin RFW page handlers (the declared /v1/admin/ui/{engine,auctions})
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 /// The RFW page-definition document (transparent renderer-contract JSON;
 /// the local auction/engine page builder emits the renderer contract).
 #[derive(Debug, serde::Serialize, utoipa::ToSchema)]
@@ -344,9 +344,9 @@ async fn admin_ui_page(
     Ok(Json(AdminRfwPage(page.to_rfw())))
 }
 
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Admin RFW data handlers (the declared engine + auctions endpoints)
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 /// One instrument row of the engine snapshot table.
 #[derive(Debug, Serialize, utoipa::ToSchema)]

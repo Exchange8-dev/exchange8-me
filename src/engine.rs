@@ -142,9 +142,9 @@ impl MatchingEngine {
             .or_insert_with(|| InstrumentBook::new(instrument_id, lot_size))
     }
 
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // Instrument / market status
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
 
     pub fn set_instrument_status(&mut self, instrument_id: u32, status: InstrumentStatus) {
         // Snapshot the current status without holding the borrow.
@@ -175,9 +175,9 @@ impl MatchingEngine {
         }
     }
 
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // AddOrder
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
 
     /// Process an AddOrder per the the platform spec flow.
     pub fn add_order(&mut self, msg: &AddOrder) {
@@ -780,9 +780,9 @@ impl MatchingEngine {
         Qty::units(remaining.raw - (portion.raw - to_match))
     }
 
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // Book mutation helpers
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
 
     fn insert_order(&mut self, msg: &AddOrder, price: Price) {
         let lot = self.lot_size(msg.instrument_id);
@@ -978,9 +978,9 @@ impl MatchingEngine {
         }
     }
 
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // Cancel / Erase
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
 
     pub fn cancel_order(&mut self, msg: &CancelOrder) {
         self.cancel_by_id(msg.instrument_id, msg.order_id, KillReason::ClientRequest);
@@ -1218,9 +1218,9 @@ impl MatchingEngine {
         }
     }
 
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // Recovery ('W')
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
 
     /// All-order state (recovery 'W'): every resting order's remaining volume.
     pub fn all_order_states(&self) -> Vec<OrderStateMsg> {
@@ -1618,9 +1618,9 @@ mod tests {
             .any(|s| s.order_id == 2 && s.volume.raw == 200));
     }
 
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // Matching discipline: strictly FIFO, never pro-rata
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
 
     #[test]
     fn deep_level_fill_sequence_is_strictly_fifo() {
@@ -1729,9 +1729,9 @@ mod tests {
             .any(|s| s.order_id == 50 && s.volume.raw == 50));
     }
 
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // Matching discipline: per-contract allocation (pro-rata contracts)
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
 
     #[test]
     fn pro_rata_contract_allocates_within_level() {
@@ -1846,10 +1846,10 @@ mod tests {
             .any(|s| s.order_id == 99 && s.volume.raw == 50));
     }
 
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // FX CLOB verification - FX pairs trade on the same engine
     // with scale-5 pip prices and lot_size=1 (no board/odd split).
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------
 
     /// FX-shaped AddOrder helper: 5-decimal price, unit lot, instrument 2.
     fn fx_add(order_id: u64, side: Side, px: i128, qty: u64) -> AddOrder {

@@ -38,9 +38,9 @@ use uuid::Uuid;
 
 use crate::auction::AuctionType;
 
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Event vocabulary (DESIGN.md §4 table - the exact master-design §7.1 names)
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 /// Stream family for the order/trade lifecycle events.
 ///
@@ -70,9 +70,9 @@ pub const EV_TRADE_EXECUTED: &str = "exchange8:me:trade:executed";
 /// `exchange8:me:auction:uncrossed` - an auction session cleared.
 pub const EV_AUCTION_UNCROSSED: &str = "exchange8:me:auction:uncrossed";
 
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Wire envelope (the MeEvent → Envelope<T> mapping)
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 /// The typed envelope the egress tasks carry (one wire form for both the
 /// direct-stream and bus-mirror transports).
@@ -236,9 +236,9 @@ fn parse_env(env_id: &str) -> Uuid {
     Uuid::parse_str(env_id).unwrap_or_else(|_| Uuid::nil())
 }
 
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Drainer - the engine → egress bridge (bounded channel + per-shard seq)
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 /// Bounded egress channel capacity (events, not bytes): backpressure the
 /// shard tasks rather than dropping (DESIGN.md §7).
@@ -368,9 +368,9 @@ impl Default for Egress {
     }
 }
 
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Outbox writer task (batch budget: 1000 events / 5 ms - DESIGN.md §7)
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 /// Writer budget: maximum events per INSERT batch.
 const OUTBOX_BATCH_EVENTS: usize = 1_000;
