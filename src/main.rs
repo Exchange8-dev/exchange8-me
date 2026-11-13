@@ -28,6 +28,7 @@ mod openapi;
 // The utoipa dump as a plain fn pointer for registration.rs (which
 // cannot name crate::openapi - the embedded test harnesses carry no
 // openapi module; see registration.rs).
+#[cfg_attr(test, allow(dead_code))]
 static OPENAPI_DUMP: fn() -> serde_json::Value = || {
     use utoipa::OpenApi as _;
     serde_json::to_value(openapi::MeOpenApi::openapi()).unwrap_or(serde_json::Value::Null)
