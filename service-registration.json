@@ -6,7 +6,8 @@
       "telemetry_property": {
         "slug": "me",
         "name": "Exchange8:ME Telemetry"
-      }
+      },
+      "exposure": "internal"
     }
   ]
 }
